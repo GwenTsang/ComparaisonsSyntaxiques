@@ -28,6 +28,14 @@ import pandas as pd
 import torch
 import stanza
 
+# ── PyTorch 2.6+ compatibility ──
+# Stanza's pretrained embeddings use numpy pickle serialization, which fails
+# with torch.load(weights_only=True). Restore the old default.
+_original_torch_load = torch.load
+torch.load = lambda *args, **kwargs: _original_torch_load(
+    *args, **{**kwargs, "weights_only": kwargs.get("weights_only", False)}
+)
+
 warnings.filterwarnings("ignore")
 
 _SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
@@ -170,15 +178,11 @@ def main():
     if torch.cuda.is_available():
         GPU_DEVICE = 0
         GPU_NAME = torch.cuda.get_device_name(GPU_DEVICE)
-        GPU_VRAM = torch.cuda.get_device_properties(GPU_DEVICE).total_mem / 1024**3
         USE_GPU = True
-        print(f"  ✓ GPU détecté : {GPU_NAME}  ({GPU_VRAM:.1f} Go VRAM)")
-        print(f"    CUDA {torch.version.cuda}  —  PyTorch {torch.__version__}")
     else:
         GPU_DEVICE = -1
         USE_GPU = False
-        print("  ⚠ Aucun GPU CUDA détecté → exécution sur CPU")
-
+        
     # ──────────────────────────────────────────────────────────────
     # 1) CHARGEMENT DU CORPUS
     # ──────────────────────────────────────────────────────────────
