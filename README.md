@@ -4,17 +4,9 @@ HOPS, an honest parser of sentences
 [![Latest PyPI version](https://img.shields.io/pypi/v/hopsparser.svg)](https://pypi.org/project/hopsparser)
 [![Continuous integration](https://github.com/hopsparser/hopsparser/actions/workflows/ci.yml/badge.svg)](https://github.com/hopsparser/hopsparser/actions/workflows/ci.yml)
 
-> It ain't much but it's honest work.
-
 This is a graph-based dependency parser inspired by [Dozat and Manning
 (2017)](https://nlp.stanford.edu/pubs/dozat2017deep.pdf)'s biaffine graph parser. Contrary to Dozat,
-the parser performs its own tagging and can use several lexers such as FastText, BERT and others. It
-has been originally designed within the [FlauBERT](https://github.com/getalp/Flaubert) initiative.
-
-The parser comes with pretrained models ready for parsing French, but it might be trained for other
-languages without difficulties.
-
-See the [documentation](http://hopsparser.readthedocs.io) for more information.
+the parser performs its own tagging and can use several lexers such as FastText, BERT and others.
 
 ## Models
 
@@ -75,6 +67,11 @@ repository useful, please cite the following paper
     hal_version = {v1},
 }
 ```
+
+The parser comes with pretrained models ready for parsing French, but it might be trained for other
+languages without difficulties.
+
+See the [documentation](http://hopsparser.readthedocs.io) for more information.
 
 ## Development
 
