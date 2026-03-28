@@ -53,6 +53,9 @@ def read_txt_file(filepath: str) -> list[str]:
     with open(filepath, encoding="utf-8") as fh:
         content = fh.read()
 
+    # Supprimer les astérisques (italiques/gras Markdown)
+    content = content.replace("*", "")
+
     # Séparer en paragraphes (séparés par des lignes vides)
     raw_paragraphs = re.split(r"\n\s*\n", content)
     paragraphs = []
