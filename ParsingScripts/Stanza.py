@@ -316,8 +316,6 @@ def main():
             mem_max = torch.cuda.max_memory_allocated(GPU_DEVICE) / 1024**2
             print(f"      VRAM : {mem:.0f} Mo (pic : {mem_max:.0f} Mo)")
 
-    elapsed_total = time.time() - t0
-    print(f"\n  ✓ Analyse terminée en {elapsed_total / 60:.1f} minutes.")
     total_errors = sum(len(v) for v in errors.values())
     if total_errors:
         print(f"  ⚠ {total_errors} erreur(s) rencontrée(s).")

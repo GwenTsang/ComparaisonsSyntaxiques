@@ -40,8 +40,8 @@ warnings.filterwarnings("ignore")
 # ════════════════════════════════════════════════════════════════════════
 # CONSTANTES
 # ════════════════════════════════════════════════════════════════════════
-COLS = ["SMS", "Transcodage_1", "Transcodage_2"]
-NICE = {
+DEFAULT_COLS = ["SMS", "Transcodage_1", "Transcodage_2"]
+DEFAULT_NICE = {
     "SMS":            "SMS brut",
     "Transcodage_1":  "Transcodage 1 (profs)",
     "Transcodage_2":  "Transcodage 2 (étudiants)",
@@ -250,23 +250,56 @@ def extract_features(sents: list[dict]) -> dict | None:
 # ARGUMENTS CLI
 # ════════════════════════════════════════════════════════════════════════
 def parse_args() -> argparse.Namespace:
+    from download_model import MODEL_REGISTRY
+
+    model_names = ", ".join(MODEL_REGISTRY.keys())
     p = argparse.ArgumentParser(
         description="Parsing avec HopsParser (CamemBERT v2 / DeBERTa)",
     )
-    p.add_argument(
-        "--model", required=True,
+
+    # ── Source du modèle (chemin direct OU nom pour auto-download) ──
+    model_group = p.add_mutually_exclusive_group(required=True)
+    model_group.add_argument(
+        "--model",
         help="Chemin vers le dossier du modèle hopsparser.",
     )
+    model_group.add_argument(
+        "--model-name",
+        help=(
+            f"Nom court du modèle à télécharger automatiquement "
+            f"({model_names})."
+        ),
+    )
+
     p.add_argument(
         "--csv",
         default=str(_REPO_ROOT / "Corpus" / "1000_SMS_transcodage.csv"),
-        help="Chemin vers le fichier CSV du corpus SMS.",
+        help="Chemin vers le fichier CSV du corpus.",
     )
     p.add_argument(
         "--output", default=None,
         help="Dossier de sortie (défaut : <nom_du_modèle>-HOPS).",
     )
+    p.add_argument(
+        "--columns", nargs="+", default=None,
+        help=(
+            "Colonnes texte à analyser (défaut : SMS Transcodage_1 "
+            "Transcodage_2). Pour un corpus mono-colonne, utilisez "
+            "par ex. --columns Texte."
+        ),
+    )
+    p.add_argument(
+        "--models-dir",
+        default=str(_REPO_ROOT / "models"),
+        help="Dossier où stocker les modèles téléchargés (défaut : <repo>/models).",
+    )
     args = p.parse_args()
+
+    # ── Auto-download si --model-name ──
+    if args.model_name:
+        from download_model import get_model_path
+        args.model = get_model_path(args.model_name, args.models_dir)
+        print(f"  ✓ Modèle résolu : {args.model}")
 
     if args.output is None:
         model_name = pathlib.Path(args.model).resolve().name
@@ -313,7 +346,7 @@ def main():
                 else:
                     kw["sep"] = sep
                 cand = pd.read_csv(CSV_PATH, **kw)
-                if all(c in cand.columns for c in COLS):
+                if len(cand.columns) >= 1:
                     df = cand
                     print(f"  Lu avec enc={enc}, sep={repr(sep)}")
                     break
@@ -325,8 +358,24 @@ def main():
     if df is None:
         sys.exit(f"  ✗ Impossible de lire {CSV_PATH}")
 
+    # ── Résolution des colonnes ──
+    if args.columns:
+        COLS = args.columns
+    elif all(c in df.columns for c in DEFAULT_COLS):
+        COLS = DEFAULT_COLS
+    else:
+        # Auto-détection : prendre toutes les colonnes texte du CSV
+        COLS = [c for c in df.columns if df[c].dtype == "object"]
+        if not COLS:
+            sys.exit("  ✗ Aucune colonne texte détectée dans le CSV.")
+        print(f"  ℹ Colonnes auto-détectées : {COLS}")
+
+    NICE = {}
+    for col in COLS:
+        NICE[col] = DEFAULT_NICE.get(col, col)
+
     N = len(df)
-    print(f"  {N} SMS chargés.")
+    print(f"  {N} lignes chargées.")
     texts = {col: df[col].apply(clean_text).tolist() for col in COLS}
     for col in COLS:
         nv = sum(1 for t in texts[col] if t)

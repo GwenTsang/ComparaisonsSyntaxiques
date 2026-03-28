@@ -16,6 +16,47 @@ languages without difficulties.
 
 See the [documentation](http://hopsparser.readthedocs.io) for more information.
 
+## Models
+
+Five parsing models are available. Use `download_model.py` to download them automatically:
+
+```sh
+# List available models
+python ParsingScripts/download_model.py --list
+
+# Download a specific model (by short name)
+python ParsingScripts/download_model.py --model fsmb
+
+# Download all models
+python ParsingScripts/download_model.py --model all --output-dir ./models
+```
+
+| Short name | Architecture | Source |
+|---|---|---|
+| `gsd` | DeBERTa v2 | HuggingFace |
+| `fsmb` | DeBERTa v2 | HuggingFace |
+| `sequoia` | DeBERTa v2 | HuggingFace |
+| `rhapsodie` | DeBERTa v2 | HuggingFace |
+| `zenodo-spoken` | RoBERTa (CamemBERT) | Zenodo |
+
+You can also use `--model-name` directly with `CamembertaHOPS.py` to auto-download:
+
+```sh
+python ParsingScripts/CamembertaHOPS.py --model-name fsmb --csv Corpus/1000_SMS_transcodage.csv
+```
+
+## Corpus Preparation
+
+To use the philosophy TXT corpus (or any directory of `.txt` files):
+
+```sh
+# Convert TXT files to CSV (one sentence per row)
+python ParsingScripts/prepare_corpus.py --input-dir Corpus/Copies --output Corpus/philosophie.csv
+
+# Then parse with any model
+python ParsingScripts/CamembertaHOPS.py --model-name gsd --csv Corpus/philosophie.csv --columns Texte
+```
+
 ## Citation
 
 If you use this parser for your scientific publication, or if you find the resources in this
