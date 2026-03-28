@@ -25,12 +25,23 @@ Sortie  : ./camembertav2-base-gsd-hopsparser/
 # ════════════════════════════════════════════════════════════════════════
 # IMPORTS
 # ════════════════════════════════════════════════════════════════════════
+import argparse
 import os
+import pathlib
 import re
 import sys
 import time
 import warnings
 from collections import Counter, defaultdict
+
+# ── Auto-detect the hopsparser package from the cloned repository ──
+# This script lives in <repo>/TestCorpus/parsingSMS.py.
+# The hopsparser package is at <repo>/hopsparser/.
+# We add <repo> to sys.path so "import hopsparser" works without pip install.
+_SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+_REPO_ROOT  = _SCRIPT_DIR.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 import numpy as np
 import pandas as pd
@@ -41,12 +52,12 @@ from scipy.spatial.distance import jensenshannon
 warnings.filterwarnings("ignore")
 
 # ════════════════════════════════════════════════════════════════════════
-# CONFIGURATION
+# CONFIGURATION  (defaults, overridden by argparse)
 # ════════════════════════════════════════════════════════════════════════
-CSV_PATH     = "/content/1000_SMS_transcodage.csv"
-OUTPUT_DIR   = "/content/camembertav2-base-gsd-hopsparser"
-PREV_RESULTS = "/content/resultats_stanza"
-MODEL_PATH   = "./model"
+CSV_PATH     = ""
+OUTPUT_DIR   = ""
+PREV_RESULTS = ""
+MODEL_PATH   = ""
 
 COLS = ["SMS", "Transcodage_1", "Transcodage_2"]
 NICE = {
@@ -315,11 +326,11 @@ def js_div(c1: Counter, c2: Counter) -> float:
 # ════════════════════════════════════════════════════════════════════════
 # COMPARAISON STANZA  vs  HOPSPARSER
 # ════════════════════════════════════════════════════════════════════════
-def compare_with_stanza():
+def compare_with_stanza(prev_results_dir: str, output_dir: str):
     section("10) COMPARAISON STANZA  vs  HOPSPARSER")
 
-    stanza_csv = os.path.join(PREV_RESULTS, "resultats_par_sms.csv")
-    hops_csv   = os.path.join(OUTPUT_DIR,   "resultats_par_sms.csv")
+    stanza_csv = os.path.join(prev_results_dir, "resultats_par_sms.csv")
+    hops_csv   = os.path.join(output_dir,   "resultats_par_sms.csv")
 
     if not os.path.exists(stanza_csv):
         print(f"  ⚠ {stanza_csv} introuvable → comparaison impossible.")
@@ -425,7 +436,7 @@ def compare_with_stanza():
         print()
 
     # ── E) Export CSV comparaison ──
-    comp_csv = os.path.join(OUTPUT_DIR, "comparaison_stanza_vs_hops.csv")
+    comp_csv = os.path.join(output_dir, "comparaison_stanza_vs_hops.csv")
     pd.DataFrame(comp_rows).to_csv(comp_csv, index=False, encoding="utf-8")
     print(f"  → {comp_csv}")
 
@@ -443,9 +454,55 @@ def compare_with_stanza():
 
 
 # ════════════════════════════════════════════════════════════════════════
+# ARGUMENTS CLI
+# ════════════════════════════════════════════════════════════════════════
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="Benchmark HopsParser sur un corpus de SMS",
+    )
+    p.add_argument(
+        "--model", required=True,
+        help="Chemin vers le dossier du modèle hopsparser (ex: ./model).",
+    )
+    p.add_argument(
+        "--csv",
+        default=str(_SCRIPT_DIR / "1000_SMS_transcodage.csv"),
+        help="Chemin vers le fichier CSV du corpus SMS "
+             "(défaut : ./TestCorpus/1000_SMS_transcodage.csv).",
+    )
+    p.add_argument(
+        "--output", default=None,
+        help="Dossier de sortie (défaut : <nom_du_dossier_modèle>-HOPS).",
+    )
+    p.add_argument(
+        "--stanza", default="/content/resultats_stanza",
+        help="Dossier des résultats Stanza pour comparaison "
+             "(défaut : /content/resultats_stanza).",
+    )
+    args = p.parse_args()
+
+    # Derive OUTPUT_DIR from model folder name if not specified
+    if args.output is None:
+        model_name = pathlib.Path(args.model).resolve().name
+        args.output = str(
+            pathlib.Path(args.model).resolve().parent / f"{model_name}-HOPS"
+        )
+
+    return args
+
+
+# ════════════════════════════════════════════════════════════════════════
 # PROGRAMME PRINCIPAL
 # ════════════════════════════════════════════════════════════════════════
 def main():
+    global CSV_PATH, OUTPUT_DIR, PREV_RESULTS, MODEL_PATH
+
+    args = parse_args()
+    CSV_PATH     = args.csv
+    OUTPUT_DIR   = args.output
+    PREV_RESULTS = args.stanza
+    MODEL_PATH   = args.model
+
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     t0 = time.time()
 
@@ -874,7 +931,7 @@ def main():
     # 10) COMPARAISON STANZA vs HOPSPARSER
     # ──────────────────────────────────────────────────────────────
     if os.path.exists(PREV_RESULTS):
-        compare_with_stanza()
+        compare_with_stanza(PREV_RESULTS, OUTPUT_DIR)
     else:
         print(f"\n  ⚠ Dossier {PREV_RESULTS} absent → comparaison omise.")
 
