@@ -19,7 +19,7 @@ dependencies = [
     "rich",
     "sacremoses",
     "tabulate2",
-    "torch >= 2.0.0, < 2.10.0",
+    "torch >= 2.0.0, < 2.12.0",
     "transformers >= 4.19.0, < 5.0.0, != 4.23.0, != 4.23.1, != 4.51.0",
     "uvicorn",
 ]
@@ -31,32 +31,10 @@ requires-python = ">= 3.11"
 version = "0.8.0"
 
 [project.urls]
-"Bug Tracker" = "https://github.com/hopsparser/hopsparser/issues"
-"Changes" = "https://github.com/hopsparser/hopsparser/blob/main/CHANGELOG.md"
-"Documentation" = "https://hopsparser.readthedocs.io"
 "Source Code" = "https://github.com/hopsparser/hopsparser"
 
 [project.optional-dependencies]
-# ci should also imply the other extras, maybe with dependency groups
-ci = ["pytest-github-actions-annotate-failures"]
 spacy = ["spacy >= 3.8, < 4.0"]
-tests = [
-    "hypothesis >= 6.0, < 7.0",
-    "networkx >= 3.2, < 3.6",
-    "pytest >= 7.0 , < 9.0",
-    "pytest-assert-utils",
-    "pytest-console-scripts >= 1.4, < 1.5",
-    "pytest-github-actions-annotate-failures",
-    "pytest-lazy-fixtures >= 1.1, < 2",
-]
-traintools = [
-    "httpx[http2]",
-    "lightning",
-    "polars >= 1.12, < 1.35",
-    "pytorch-lightning >= 2.4, < 3.0",
-    "tensorboardx",
-    "torchmetrics",
-]
 
 [project.readme]
 file = "README.md"
@@ -67,31 +45,8 @@ hopsparser = "hopsparser.main:cli"
 eval_parse = "hopsparser.evaluator:main"
 
 [tool.setuptools]
-packages = ["hopsparser", "hopsparser.traintools"]
+packages = ["hopsparser"]
 
 [build-system]
 requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[tool.mypy]
-check_untyped_defs = true
-warn_unreachable = true
-plugins = ["pydantic.mypy"]
-
-[tool.pytest.ini_options]
-script_launch_mode = "subprocess"
-tmp_path_retention_policy = "failed"
-tmp_path_retention_count = 1
-
-[tool.ruff]
-line-length = 100
-
-[tool.ruff.lint]
-ignore = ["PTH123"]
-select = ["A", "B", "C90", "E", "F", "N", "NPY", "PT", "PTH", "PYI", "S", "W"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [
-    "S101", # asserts allowed in tests
-    "ARG",  # Unused function args -> fixtures nevertheless are functionally relevant
-]

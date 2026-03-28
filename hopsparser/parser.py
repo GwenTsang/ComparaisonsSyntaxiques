@@ -498,7 +498,7 @@ class BiAffineParser(nn.Module):
 
         # ARC LOSS
         # [batch×num_deps, num_heads]
-        head_scores_flat = parser_output.head_scores.view(-1, parser_output.head_scores.size(-1))
+        head_scores_flat = parser_output.head_scores.reshape(-1, parser_output.head_scores.size(-1))
         all_loss["head"] = self.marginal_loss(head_scores_flat, batch.heads.view(-1))
 
         # LABEL LOSS
@@ -981,7 +981,7 @@ class BiAffineParser(nn.Module):
         # shape: num_deps×1×num_deprel
         select = mst_heads.view(-1, 1, 1).expand(-1, 1, scores.deprel_scores.size(-1))
         # shape: num_deps×num_deprel
-        selected = torch.gather(scores.deprel_scores, 1, select).view(sentence_length, -1)
+        selected = torch.gather(scores.deprel_scores, 1, select).reshape(sentence_length, -1)
         mst_labels = selected.argmax(dim=-1)
 
         # Predict tags

@@ -1,0 +1,16 @@
+# Requirements for running HopsParser on Google Colab (inference only)
+#
+# Usage:
+#   pip install -e /content/HopsColab
+#   pip install -r /content/HopsColab/requirements.txt
+
+# Pin transformers to avoid DeBERTa incompatibilities
+transformers>=4.41.0,<4.52.0
+
+# Required by transformers.models.timm_wrapper
+torchvision
+
+# Needed for the analysis script (parsingSMS.py)
+numpy<2.0
+pandas
+scipy

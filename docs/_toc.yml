@@ -1,9 +1,0 @@
-format: jb-book
-root: index
-parts:
-  - caption: ""
-    numbered: false
-    chapters:
-    - file: get_started.md
-    - file: server.md
-    - file: models.md
