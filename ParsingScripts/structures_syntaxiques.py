@@ -19,6 +19,7 @@
 
 import argparse
 import csv
+import glob
 import os
 import pathlib
 import re
@@ -240,7 +241,16 @@ def group_sentences_by_text_idx(sentences: list[ConlluSentence]) -> dict[int, li
 # ════════════════════════════════════════════════════════════════════════
 # CLI
 # ════════════════════════════════════════════════════════════════════════
-COLS = ["SMS", "Transcodage_1", "Transcodage_2"]
+
+
+def discover_columns(input_dir: str) -> list[str]:
+    """Auto-discover column names from output_*.conllu filenames."""
+    pattern = os.path.join(input_dir, "output_*.conllu")
+    cols = sorted(
+        os.path.basename(f).replace("output_", "").replace(".conllu", "")
+        for f in glob.glob(pattern)
+    )
+    return cols
 
 
 def parse_args() -> argparse.Namespace:
@@ -255,6 +265,10 @@ def parse_args() -> argparse.Namespace:
         "--output-csv", default=None,
         help="Chemin du CSV de sortie (défaut : <input-dir>/structures_syntaxiques.csv).",
     )
+    p.add_argument(
+        "--columns", nargs="+", default=None,
+        help="Colonnes à analyser (défaut : auto-détection depuis output_*.conllu).",
+    )
     return p.parse_args()
 
 
@@ -266,9 +280,18 @@ def main():
     print(f"  Dossier d'entrée : {input_dir}")
     print(f"  CSV de sortie    : {output_csv}")
 
+    # ── Discover or use explicit columns ──
+    if args.columns:
+        cols = args.columns
+    else:
+        cols = discover_columns(input_dir)
+    if not cols:
+        sys.exit("  ✗ Aucun fichier output_*.conllu trouvé.")
+    print(f"  Colonnes         : {', '.join(cols)}")
+
     all_rows = []
 
-    for col in COLS:
+    for col in cols:
         conllu_path = os.path.join(input_dir, f"output_{col}.conllu")
         if not os.path.exists(conllu_path):
             print(f"  ⚠ {conllu_path} introuvable → colonne {col} ignorée.")
@@ -281,7 +304,7 @@ def main():
         for tidx in sorted(groups.keys()):
             sents = groups[tidx]
             feats = compute_features(sents)
-            row = {"sms_id": tidx + 1, "colonne": col}
+            row = {"texte_id": tidx + 1, "colonne": col}
             row.update(feats)
             all_rows.append(row)
 
@@ -289,7 +312,7 @@ def main():
         sys.exit("  ✗ Aucun fichier CoNLL-U trouvé.")
 
     # ── Export CSV ──
-    fieldnames = ["sms_id", "colonne"] + CSV_COLUMNS_PER_FEATURE
+    fieldnames = ["texte_id", "colonne"] + CSV_COLUMNS_PER_FEATURE
     with open(output_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()

@@ -32,7 +32,6 @@ warnings.filterwarnings("ignore")
 # ════════════════════════════════════════════════════════════════════════
 # CONSTANTES
 # ════════════════════════════════════════════════════════════════════════
-COLS = ["SMS", "Transcodage_1", "Transcodage_2"]
 
 FKEYS = [
     "profondeur_arbre_max",
@@ -65,20 +64,38 @@ def load_results(dirs: list[str]) -> dict[str, pd.DataFrame]:
             sys.exit(f"  ✗ Fichier introuvable : {csv_path}")
         name = Path(d).name
         data[name] = pd.read_csv(csv_path)
-        print(f"  ✓ {name} : {len(data[name])} SMS  ({csv_path})")
+        print(f"  ✓ {name} : {len(data[name])} textes  ({csv_path})")
     return data
+
+
+def discover_columns(data: dict[str, pd.DataFrame]) -> list[str]:
+    """Auto-discover column prefixes from CSV headers.
+
+    Column naming convention: {col}_{feature} (e.g. SMS_nb_phrases).
+    """
+    prefixes: set[str] = set()
+    for df in data.values():
+        for header in df.columns:
+            for feat in FKEYS:
+                suffix = f"_{feat}"
+                if header.endswith(suffix):
+                    prefix = header[: -len(suffix)]
+                    if prefix:  # skip empty prefix
+                        prefixes.add(prefix)
+    return sorted(prefixes)
 
 
 # ════════════════════════════════════════════════════════════════════════
 # CORRÉLATIONS PAIRWISE (Pearson)
 # ════════════════════════════════════════════════════════════════════════
-def pairwise_correlations(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
+def pairwise_correlations(data: dict[str, pd.DataFrame],
+                          cols: list[str]) -> pd.DataFrame:
     """Corrélation de Pearson entre chaque paire de modèles, par feature."""
     models = list(data.keys())
     pairs = list(itertools.combinations(models, 2))
     rows = []
 
-    for col in COLS:
+    for col in cols:
         for feat in FKEYS:
             cn = f"{col}_{feat}"
             for m1, m2 in pairs:
@@ -104,17 +121,18 @@ def pairwise_correlations(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
 # ════════════════════════════════════════════════════════════════════════
 # ÉCART ABSOLU MOYEN INTER-MODÈLES  (MAD)
 # ════════════════════════════════════════════════════════════════════════
-def mean_absolute_deviation(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
+def mean_absolute_deviation(data: dict[str, pd.DataFrame],
+                            cols: list[str]) -> pd.DataFrame:
     """
-    Pour chaque SMS × feature, calcule l'écart absolu moyen entre
+    Pour chaque texte × feature, calcule l'écart absolu moyen entre
     tous les modèles (pairwise mean absolute deviation), puis moyenne
-    sur tous les SMS.
+    sur tous les textes.
     """
     models = list(data.keys())
     n = min(len(df) for df in data.values())
     rows = []
 
-    for col in COLS:
+    for col in cols:
         for feat in FKEYS:
             cn = f"{col}_{feat}"
             vals = []
@@ -124,20 +142,20 @@ def mean_absolute_deviation(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
             if len(vals) < 2:
                 continue
 
-            arr = np.array(vals)  # shape: (n_models, n_sms)
-            # Pairwise MAD per SMS
-            mad_per_sms = np.zeros(n)
+            arr = np.array(vals)  # shape: (n_models, n_texts)
+            # Pairwise MAD per text
+            mad_per_text = np.zeros(n)
             n_pairs = 0
             for i, j in itertools.combinations(range(len(vals)), 2):
                 mask = np.isfinite(arr[i]) & np.isfinite(arr[j])
-                mad_per_sms[mask] += np.abs(arr[i][mask] - arr[j][mask])
+                mad_per_text[mask] += np.abs(arr[i][mask] - arr[j][mask])
                 n_pairs += 1
 
             if n_pairs > 0:
-                mad_per_sms /= n_pairs
+                mad_per_text /= n_pairs
 
-            avg_mad = float(np.nanmean(mad_per_sms))
-            std_mad = float(np.nanstd(mad_per_sms))
+            avg_mad = float(np.nanmean(mad_per_text))
+            std_mad = float(np.nanstd(mad_per_text))
 
             rows.append({
                 "corpus": col, "feature": feat,
@@ -196,10 +214,11 @@ def rank_features(corr_df: pd.DataFrame, mad_df: pd.DataFrame):
 # ════════════════════════════════════════════════════════════════════════
 # PER-SMS DISAGREEMENT SCORES
 # ════════════════════════════════════════════════════════════════════════
-def per_sms_disagreement(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
+def per_text_disagreement(data: dict[str, pd.DataFrame],
+                          cols: list[str]) -> pd.DataFrame:
     """
-    Pour chaque SMS, calcule un score de désaccord global entre les modèles
-    (somme des MAD normalisées sur toutes les features).
+    Pour chaque texte, calcule un score de désaccord global entre les modèles
+    (somme des ranges normalisées sur toutes les features).
     """
     models = list(data.keys())
     n = min(len(df) for df in data.values())
@@ -207,7 +226,7 @@ def per_sms_disagreement(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
     scores = np.zeros(n)
     n_feats = 0
 
-    for col in COLS:
+    for col in cols:
         for feat in FKEYS:
             cn = f"{col}_{feat}"
             vals = []
@@ -218,15 +237,14 @@ def per_sms_disagreement(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
                 continue
 
             arr = np.array(vals)
-            # Range per SMS
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                range_per_sms = np.nanmax(arr, axis=0) - np.nanmin(arr, axis=0)
-                range_per_sms = np.nan_to_num(range_per_sms, nan=0.0)
-            scores += range_per_sms
+                range_per_text = np.nanmax(arr, axis=0) - np.nanmin(arr, axis=0)
+                range_per_text = np.nan_to_num(range_per_text, nan=0.0)
+            scores += range_per_text
             n_feats += 1
 
-    rows = [{"sms_id": i + 1, "desaccord_total": round(scores[i], 3)}
+    rows = [{"texte_id": i + 1, "desaccord_total": round(scores[i], 3)}
             for i in range(n)]
     return pd.DataFrame(rows)
 
@@ -250,8 +268,8 @@ def parse_args() -> argparse.Namespace:
 
     if len(args.dirs) < 2:
         p.error("Au moins 2 dossiers sont requis.")
-    if len(args.dirs) > 4:
-        p.error("Au maximum 4 dossiers sont acceptés.")
+    if len(args.dirs) > 10:
+        p.error("Au maximum 10 dossiers sont acceptés.")
 
     return args
 
@@ -268,9 +286,15 @@ def main():
     models = list(data.keys())
     print(f"\n  {len(models)} modèle(s) : {', '.join(models)}")
 
+    # ── Auto-discover columns ──
+    cols = discover_columns(data)
+    if not cols:
+        sys.exit("  ✗ Aucune colonne de features détectée dans les CSV.")
+    print(f"  Colonnes détectées : {', '.join(cols)}")
+
     # ── Corrélations pairwise ──
     section("CORRÉLATIONS PAIRWISE (Pearson)")
-    corr_df = pairwise_correlations(data)
+    corr_df = pairwise_correlations(data, cols)
     if not corr_df.empty:
         for (m1, m2), grp in corr_df.groupby(["modele_1", "modele_2"]):
             avg_r = grp["pearson_r"].mean()
@@ -285,7 +309,7 @@ def main():
 
     # ── MAD ──
     section("ÉCART ABSOLU MOYEN (MAD)")
-    mad_df = mean_absolute_deviation(data)
+    mad_df = mean_absolute_deviation(data, cols)
     if not mad_df.empty:
         print(f"\n  {'Corpus':<18} {'Feature':<34} {'MAD moyen':>10} {'σ':>10}")
         print("  " + "─" * 76)
@@ -296,12 +320,12 @@ def main():
     # ── Classement ──
     agg_df = rank_features(corr_df, mad_df)
 
-    # ── Désaccord par SMS ──
-    section("TOP 20 SMS AVEC LE PLUS DE DÉSACCORD")
-    disag_df = per_sms_disagreement(data)
+    # ── Désaccord par texte ──
+    section("TOP 20 TEXTES AVEC LE PLUS DE DÉSACCORD")
+    disag_df = per_text_disagreement(data, cols)
     top20 = disag_df.nlargest(20, "desaccord_total")
     for _, row in top20.iterrows():
-        print(f"  SMS n°{int(row['sms_id']):>4}  désaccord = {row['desaccord_total']:.2f}")
+        print(f"  Texte n°{int(row['texte_id']):>4}  désaccord = {row['desaccord_total']:.2f}")
 
     # ── Export ──
     section("EXPORT")
@@ -318,7 +342,7 @@ def main():
         agg_df.to_csv(rank_csv, index=False, encoding="utf-8")
         print(f"  → {rank_csv}")
 
-    disag_csv = os.path.join(args.output, "desaccord_par_sms.csv")
+    disag_csv = os.path.join(args.output, "desaccord_par_texte.csv")
     disag_df.to_csv(disag_csv, index=False, encoding="utf-8")
     print(f"  → {disag_csv}")
 

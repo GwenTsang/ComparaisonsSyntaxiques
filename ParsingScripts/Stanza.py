@@ -30,7 +30,14 @@ from collections import Counter, defaultdict
 import numpy as np
 import pandas as pd
 import torch
-import stanza
+
+try:
+    import stanza
+except ImportError:
+    import subprocess as _sp
+    print("  ⚠ stanza non installé → installation automatique…")
+    _sp.check_call([sys.executable, "-m", "pip", "install", "-q", "stanza"])
+    import stanza
 
 # ── PyTorch 2.6+ compatibility ──
 # Stanza's pretrained embeddings use numpy pickle serialization, which fails
