@@ -12,7 +12,19 @@ Plus précisément :
 
 Nous nous sommes aperçus que les parsers du site [Texttokids](https://texttokids.ortolang.fr) ne fonctionnaient pas extrêmement bien sur le langage SMS.
 
-Nous avons été consulter le code source des parsers proposés sur ce site [à ce lien](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/tree/main/text_complexity/server/src/processor/syntaxe).
+après avoir consulté le code source des parsers proposés sur ce site [à ce lien](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/tree/main/text_complexity/server/src/processor/syntaxe), on s'en est inspiré pour reproduire les deux mêmes tâches (complexité dans les dépendances syntaxiques et complexité dans les structures syntaxiques), mais avec d'autres modèles :
+Voici le tableau avec la colonne **“Lien corpus”** ajoutée :
+
+| Nom                      | Genre textuel du corpus d’entraînement                                                         | Liens modèle                                                                                                               | Lien corpus                                                                                                                                 |
+| ------------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `camembertav2-gsd`       | Français standard écrit (web, Wikipédia)                                                       | [https://huggingface.co/almanach/camembertav2-base-gsd](https://huggingface.co/almanach/camembertav2-base-gsd)             | [https://github.com/UniversalDependencies/UD_French-GSD](https://github.com/UniversalDependencies/UD_French-GSD)                            |
+| `camembertav2-fsmb`      | Français des réseaux sociaux (informel, bruité)                                                | [https://huggingface.co/almanach/camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb)           | [https://github.com/UniversalDependencies/UD_French-FSMB](https://github.com/UniversalDependencies/UD_French-FSMB)                          |
+| `camembertav2-sequoia`   | Corpus multi-domaines : Wikipédia, Europarl, presse, médical (wiki, news, medical, nonfiction) | [https://huggingface.co/almanach/camembertav2-sequoia](https://huggingface.co/almanach/camembertav2-sequoia)               | [https://github.com/UniversalDependencies/UD_French-Sequoia](https://github.com/UniversalDependencies/UD_French-Sequoia)                    |
+| `camembertav2-rhapsodie` | Français parlé annoté (oral linguistique structuré)                                            | [https://huggingface.co/almanach/camembertav2-base-rhapsodie](https://huggingface.co/almanach/camembertav2-base-rhapsodie) | [https://github.com/UniversalDependencies/UD_French-Rhapsodie](https://github.com/UniversalDependencies/UD_French-Rhapsodie)                |
+| `spoken-french`          | Français oral (agrégat UD : ParisStories + Rhapsodie ; spontané + annoté)                      | [https://hopsparser.readthedocs.io/en/latest/models.html](https://hopsparser.readthedocs.io/en/latest/models.html)         | [https://github.com/UniversalDependencies](https://github.com/UniversalDependencies) (agrégat de corpus UD, dont Rhapsodie et ParisStories) |
+
+Si tu veux, je peux aussi ajouter une colonne “taille du corpus” ou “type d’annotation (POS, dépendances, etc.)” 👍
+
 
 Pour pallier cela, nous avons utilisé certains parsers ayant été entraînés sur des corpus assez proches, par exemple [camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb) qui a été entraîné sur le corpus FSMB (French Social Media Bank, cf. [Seddah (2012)](https://inria.hal.science/hal-00780895)).
 
