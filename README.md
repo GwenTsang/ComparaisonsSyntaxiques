@@ -1,16 +1,13 @@
-HOPS, an honest parser of sentences
+Comparaisons syntaxiques de corpus avec des parseurs (HOPS, Stanza)
 ===================================
 
 [![Latest PyPI version](https://img.shields.io/pypi/v/hopsparser.svg)](https://pypi.org/project/hopsparser)
 [![Continuous integration](https://github.com/hopsparser/hopsparser/actions/workflows/ci.yml/badge.svg)](https://github.com/hopsparser/hopsparser/actions/workflows/ci.yml)
 
-<<<<<<< HEAD
-=======
-This is a graph-based dependency parser inspired by [Dozat and Manning
-(2017)](https://nlp.stanford.edu/pubs/dozat2017deep.pdf)'s biaffine graph parser. Contrary to Dozat,
+
+This is a graph-based dependency parser inspired by [Dozat and Manning (2017)](https://nlp.stanford.edu/pubs/dozat2017deep.pdf)'s biaffine graph parser. Contrary to Dozat,
 the parser performs its own tagging and can use several lexers such as FastText, BERT and others.
 
->>>>>>> 51e1acbc44e2201211c5a72055c5ba365c443497
 ## Models
 
 Five parsing models are available. Use `download_model.py` to download them automatically:
