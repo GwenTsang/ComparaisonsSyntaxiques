@@ -10,7 +10,11 @@ Plus précisément :
 
 ### Préalables méthodologiques
 
-Nous nous sommes aperçus que les parsers ne fonctionnaient pas extrêmement bien sur le langage SMS. Pour pallier cela, nous avons utilisé certains parsers ayant été entraînés sur des corpus assez proches, par exemple [camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb) qui a été entraîné sur le corpus FSMB (French Social Media Bank, cf. [Seddah (2012)](https://inria.hal.science/hal-00780895)).
+Nous nous sommes aperçus que les parsers du site [Texttokids](https://texttokids.ortolang.fr) ne fonctionnaient pas extrêmement bien sur le langage SMS.
+
+Nous avons été consulter le code source des parsers proposés sur ce site [à ce lien](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/tree/main/text_complexity/server/src/processor/syntaxe).
+
+Pour pallier cela, nous avons utilisé certains parsers ayant été entraînés sur des corpus assez proches, par exemple [camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb) qui a été entraîné sur le corpus FSMB (French Social Media Bank, cf. [Seddah (2012)](https://inria.hal.science/hal-00780895)).
 
 Le projet utilise deux pipelines principales :
 
