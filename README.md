@@ -23,7 +23,6 @@ Voici le tableau avec la colonne **“Lien corpus”** ajoutée :
 | `camembertav2-rhapsodie` | Français parlé annoté (oral linguistique structuré)                                            | [https://huggingface.co/almanach/camembertav2-base-rhapsodie](https://huggingface.co/almanach/camembertav2-base-rhapsodie) | [https://github.com/UniversalDependencies/UD_French-Rhapsodie](https://github.com/UniversalDependencies/UD_French-Rhapsodie)                |
 | `spoken-french`          | Français oral (agrégat UD : ParisStories + Rhapsodie ; spontané + annoté)                      | [https://hopsparser.readthedocs.io/en/latest/models.html](https://hopsparser.readthedocs.io/en/latest/models.html)         |  (agrégat de corpus UD, dont Rhapsodie et ParisStories) |
 
-Si tu veux, je peux aussi ajouter une colonne “taille du corpus” ou “type d’annotation (POS, dépendances, etc.)” 👍
 
 
 Pour pallier cela, nous avons utilisé certains parsers ayant été entraînés sur des corpus assez proches, par exemple [camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb) qui a été entraîné sur le corpus FSMB (French Social Media Bank, cf. [Seddah (2012)](https://inria.hal.science/hal-00780895)).
