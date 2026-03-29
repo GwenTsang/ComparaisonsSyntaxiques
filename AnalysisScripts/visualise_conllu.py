@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-serve_conllu.py — Serveur displacy pour fichiers CoNLL-U pre-calcules.
+visualise_conllu.py — Visualisation displacy pour fichiers CoNLL-U pre-calcules.
 
-Lance un serveur displacy interactif a partir d'un fichier CoNLL-U
-(resultats HopsParser ou Stanza). Aucun modele n'est charge.
+Exporte un rendu displacy en fichier HTML a partir d'un fichier CoNLL-U
+(resultats HopsParser ou Stanza). Aucun modele n'est charge, evitant
+ainsi les problemes de ports inaccessibles sur Google Colab.
 
 Usage :
-    python AnalysisScripts/serve_conllu.py results/SMS/fsmb/output_SMS.conllu
-    python AnalysisScripts/serve_conllu.py results/SMS/gsd/output_SMS.conllu --sent-range 5-20
-    python AnalysisScripts/serve_conllu.py results/SMS/stanza/output_SMS.conllu --port 5001
+    python AnalysisScripts/visualise_conllu.py results/SMS/fsmb/output_SMS.conllu
+    python AnalysisScripts/visualise_conllu.py results/SMS/gsd/output_SMS.conllu --sent-range 5-20 --output mon_rendu.html
 """
 
 import argparse
@@ -137,7 +137,7 @@ def check_and_warn(path: str, sentences: list[dict]) -> None:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Serveur displacy interactif pour un fichier CoNLL-U.",
+        description="Génère une visualisation HTML pour un fichier CoNLL-U.",
     )
     p.add_argument("conllu", help="Chemin vers le fichier CoNLL-U.")
     p.add_argument(
@@ -146,8 +146,8 @@ def parse_args() -> argparse.Namespace:
              " Par defaut : toutes les phrases.",
     )
     p.add_argument(
-        "--port", type=int, default=5000,
-        help="Port du serveur displacy (defaut : 5000).",
+        "--output", default="visualisation_arbres.html",
+        help="Chemin du fichier HTML exporté (defaut: visualisation_arbres.html).",
     )
     return p.parse_args()
 
@@ -175,15 +175,20 @@ def main() -> None:
 
     manual_data = [to_displacy(s) for s in to_serve]
 
-    print(f"\nServeur displacy sur http://localhost:{args.port}")
-    print("Ctrl+C pour arreter.\n")
-    displacy.serve(
+    print(f"\nGénèration du rendu HTML des arbres...")
+    html = displacy.render(
         manual_data,
         style="dep",
+        page=True,
         manual=True,
-        port=args.port,
-        options={"distance": 100, "compact": True},
+        options={"distance": 100, "compact": True, "bg": "#f9f9f9", "color": "#000"},
     )
+    
+    with open(args.output, "w", encoding="utf-8") as f:
+        f.write(html)
+        
+    print(f"[SUCCESS] Visualisation sauvegardée dans : {args.output}")
+    print("Telechargez et ouvrez ce fichier dans votre navigateur pour voir les arbres.")
 
 
 if __name__ == "__main__":
