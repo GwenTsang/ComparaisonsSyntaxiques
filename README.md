@@ -10,7 +10,7 @@ Plus précisément :
 
 ### Préalables méthodologiques
 
-Nous nous sommes aperçus que les parsers ne fonctionnaient pas extrêmement bien sur le langage SMS. Pour pallier cela, nous avons utilisé certains parsers ayant été entraînés sur des corpus assez proches, par exemple [camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb) qui a été entraîné sur le corpus FSMB (French Social Media Bank, cf. [llf.cnrs.fr](http://www.llf.cnrs.fr/fr/node/5746)).
+Nous nous sommes aperçus que les parsers ne fonctionnaient pas extrêmement bien sur le langage SMS. Pour pallier cela, nous avons utilisé certains parsers ayant été entraînés sur des corpus assez proches, par exemple [camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb) qui a été entraîné sur le corpus FSMB (French Social Media Bank, cf. [Seddah (2012)](https://inria.hal.science/hal-00780895)).
 
 Le projet utilise deux pipelines principales :
 
