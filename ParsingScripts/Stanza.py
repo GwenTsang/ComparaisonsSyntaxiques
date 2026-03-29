@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 ==========================================================================
-  Parsing avec Stanza sur un corpus de 1000 SMS
-  Comparaison : SMS brut  /  Transcodage_1 (profs)  /  Transcodage_2 (étudiants)
+  Parsing avec Stanza
 
   Sortie : <output_dir>/
              ├── resultats_par_sms.csv
+             ├── output_<col>.conllu
              └── (logs terminaux)
 ==========================================================================
 """
@@ -44,8 +44,8 @@ _REPO_ROOT  = _SCRIPT_DIR.parent
 # ════════════════════════════════════════════════════════════════════════
 # CONSTANTES
 # ════════════════════════════════════════════════════════════════════════
-COLS = ["SMS", "Transcodage_1", "Transcodage_2"]
-NICE = {
+DEFAULT_COLS = ["SMS", "Transcodage_1", "Transcodage_2"]
+DEFAULT_NICE = {
     "SMS":            "SMS brut",
     "Transcodage_1":  "Transcodage 1 (profs)",
     "Transcodage_2":  "Transcodage 2 (étudiants)",
@@ -146,19 +146,62 @@ def extract_features(doc) -> dict:
 
 
 # ════════════════════════════════════════════════════════════════════════
+# CONLL-U EXPORT
+# ════════════════════════════════════════════════════════════════════════
+def export_conllu(docs: list, texts: list[str], output_path: str):
+    """
+    Exporte une liste de Documents Stanza au format CoNLL-U.
+    Ajoute les commentaires text_idx et sent_idx pour compatibilité
+    avec structures_syntaxiques.py.
+    """
+    with open(output_path, "w", encoding="utf-8") as fh:
+        global_sent_idx = 0
+        for tidx, doc in enumerate(docs):
+            if doc is None:
+                continue
+            for sidx, sent in enumerate(doc.sentences):
+                fh.write(f"# text_idx = {tidx}\n")
+                fh.write(f"# sent_idx = {sidx}\n")
+                sent_text = sent.text if hasattr(sent, 'text') and sent.text else ""
+                fh.write(f"# text = {sent_text}\n")
+                for word in sent.words:
+                    wid = word.id
+                    form = word.text
+                    lemma = word.lemma if word.lemma else "_"
+                    upos = word.upos if word.upos else "_"
+                    xpos = word.xpos if word.xpos else "_"
+                    feats = word.feats if word.feats else "_"
+                    head = word.head if word.head is not None else 0
+                    deprel = word.deprel if word.deprel else "_"
+                    fh.write(
+                        f"{wid}\t{form}\t{lemma}\t{upos}\t{xpos}\t"
+                        f"{feats}\t{head}\t{deprel}\t_\t_\n"
+                    )
+                fh.write("\n")
+                global_sent_idx += 1
+
+
+# ════════════════════════════════════════════════════════════════════════
 # ARGUMENTS CLI
 # ════════════════════════════════════════════════════════════════════════
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Parsing avec Stanza sur un corpus de SMS",
+        description="Parsing avec Stanza",
     )
     p.add_argument(
         "--csv", required=True,
-        help="Chemin vers le fichier CSV du corpus SMS.",
+        help="Chemin vers le fichier CSV du corpus.",
     )
     p.add_argument(
         "--output", default=str(_REPO_ROOT / "resultats_stanza"),
         help="Dossier de sortie (défaut : <repo>/resultats_stanza).",
+    )
+    p.add_argument(
+        "--columns", nargs="+", default=None,
+        help=(
+            "Colonnes texte à analyser (défaut : SMS Transcodage_1 "
+            "Transcodage_2). Pour un corpus mono-colonne : --columns Texte."
+        ),
     )
     return p.parse_args()
 
@@ -179,13 +222,13 @@ def main():
         GPU_DEVICE = 0
         GPU_NAME = torch.cuda.get_device_name(GPU_DEVICE)
         USE_GPU = True
+        print(f"  \u2713 GPU : {GPU_NAME}")
     else:
         GPU_DEVICE = -1
         USE_GPU = False
-        
-    # ──────────────────────────────────────────────────────────────
+        print("  \u26a0 Pas de GPU CUDA \u2192 CPU")
+
     # 1) CHARGEMENT DU CORPUS
-    # ──────────────────────────────────────────────────────────────
     section("1) CHARGEMENT DU CORPUS")
 
     df = None
@@ -199,9 +242,9 @@ def main():
                 else:
                     kw["sep"] = sep
                 candidate = pd.read_csv(CSV_PATH, **kw)
-                if all(c in candidate.columns for c in COLS):
+                if len(candidate.columns) >= 1:
                     df = candidate
-                    print(f"  Fichier lu avec encodage={enc}, séparateur={repr(sep)}")
+                    print(f"  Fichier lu avec encodage={enc}, s\u00e9parateur={repr(sep)}")
                     break
             except Exception:
                 continue
@@ -209,13 +252,25 @@ def main():
             break
 
     if df is None:
-        sys.exit(
-            f"  ✗ Impossible de lire {CSV_PATH} avec les colonnes attendues {COLS}.\n"
-            f"    Vérifiez le fichier et les noms de colonnes."
-        )
+        sys.exit(f"  \u2717 Impossible de lire {CSV_PATH}")
+
+    # \u2500\u2500 R\u00e9solution des colonnes \u2500\u2500
+    if args.columns:
+        COLS = args.columns
+    elif all(c in df.columns for c in DEFAULT_COLS):
+        COLS = DEFAULT_COLS
+    else:
+        COLS = [c for c in df.columns if df[c].dtype == "object"]
+        if not COLS:
+            sys.exit("  \u2717 Aucune colonne texte d\u00e9tect\u00e9e dans le CSV.")
+        print(f"  \u2139 Colonnes auto-d\u00e9tect\u00e9es : {COLS}")
+
+    NICE = {}
+    for col in COLS:
+        NICE[col] = DEFAULT_NICE.get(col, col)
 
     N = len(df)
-    print(f"  {N} SMS chargés.")
+    print(f"  {N} lignes charg\u00e9es.")
 
     texts = {col: df[col].apply(clean_text).tolist() for col in COLS}
     for col in COLS:
@@ -258,16 +313,17 @@ def main():
     section("3) ANALYSE SYNTAXIQUE (batch GPU)")
 
     feats  = {col: [None] * N for col in COLS}
+    docs_per_col = {col: [None] * N for col in COLS}
     errors = {col: [] for col in COLS}
 
     total = N * len(COLS)
-    print(f"  {total} textes à analyser ({N} SMS × {len(COLS)} versions)")
+    print(f"  {total} textes a analyser ({N} x {len(COLS)} colonnes)")
     print(f"  Traitement par batch de {BATCH_SIZE} textes via bulk_process()\n")
 
     done = 0
     for col in COLS:
         t_col = time.time()
-        print(f"  ── {NICE[col]} ──")
+        print(f"  -- {NICE[col]} --")
 
         text_list = texts[col]
         batch_starts = list(range(0, N, BATCH_SIZE))
@@ -285,8 +341,8 @@ def main():
                 try:
                     batch_docs = nlp.bulk_process(list(non_empty))
                 except Exception as exc:
-                    print(f"    ⚠ Erreur batch [{b_start}:{b_end}] : {exc}")
-                    print(f"      → Fallback un par un")
+                    print(f"    ! Erreur batch [{b_start}:{b_end}] : {exc}")
+                    print(f"      -> Fallback un par un")
                     batch_docs = []
                     for txt in non_empty:
                         try:
@@ -299,29 +355,43 @@ def main():
                     global_i = b_start + local_j
                     if doc is not None:
                         feats[col][global_i] = extract_features(doc)
+                        docs_per_col[col][global_i] = doc
 
             done += (b_end - b_start)
             elapsed = time.time() - t0
             eta = elapsed / done * (total - done) if done > 0 else 0
             print(f"    {done:>5}/{total}  "
                   f"({done / total * 100:5.1f} %)  "
-                  f"écoulé {elapsed / 60:.1f} min  "
+                  f"ecoule {elapsed / 60:.1f} min  "
                   f"restant ~{eta / 60:.1f} min", end="\r")
 
         dt_col = time.time() - t_col
-        print(f"\n    ✓ {NICE[col]} : {dt_col:.1f} s")
+        print(f"\n    OK {NICE[col]} : {dt_col:.1f} s")
 
         if USE_GPU:
             mem = torch.cuda.memory_allocated(GPU_DEVICE) / 1024**2
             mem_max = torch.cuda.max_memory_allocated(GPU_DEVICE) / 1024**2
             print(f"      VRAM : {mem:.0f} Mo (pic : {mem_max:.0f} Mo)")
 
+    elapsed_total = time.time() - t0
+    print(f"\n  OK Analyse terminee en {elapsed_total / 60:.1f} minutes.")
     total_errors = sum(len(v) for v in errors.values())
     if total_errors:
-        print(f"  ⚠ {total_errors} erreur(s) rencontrée(s).")
+        print(f"  ! {total_errors} erreur(s) rencontree(s).")
 
     # ──────────────────────────────────────────────────────────────
-    # 4) EXPORT DES RÉSULTATS
+    # 3b) EXPORT CONLL-U
+    # ──────────────────────────────────────────────────────────────
+    section("3b) EXPORT CONLL-U")
+    for col in COLS:
+        col_docs = docs_per_col[col]
+        conllu_path = os.path.join(OUTPUT_DIR, f"output_{col}.conllu")
+        export_conllu(col_docs, texts[col], conllu_path)
+        n_docs = sum(1 for d in col_docs if d is not None)
+        print(f"  {col} : {n_docs} documents -> {conllu_path}")
+
+    # ──────────────────────────────────────────────────────────────
+    # 4) EXPORT DES RESULTATS
     # ──────────────────────────────────────────────────────────────
     section("4) EXPORT")
 
@@ -336,7 +406,7 @@ def main():
             else:
                 for k in FKEYS:
                     row[f"{col}_{k}"] = np.nan
-        if all(feats[c][i] is not None for c in COLS):
+        if len(COLS) > 1 and all(feats[c][i] is not None for c in COLS):
             row["divergence_score"] = sum(
                 max(feats[c][i][k] for c in COLS) - min(feats[c][i][k] for c in COLS)
                 for k in DIVERGENCE_KEYS
@@ -347,13 +417,13 @@ def main():
 
     csv_out = os.path.join(OUTPUT_DIR, "resultats_par_sms.csv")
     pd.DataFrame(rows).to_csv(csv_out, index=False, encoding="utf-8")
-    print(f"  → {csv_out}")
+    print(f"  -> {csv_out}")
 
-    # ── Résumé ──
+    # -- Resume --
     elapsed = time.time() - t0
     print(f"\n{BANNER}")
-    print(f"  ✓ Parsing terminé en {elapsed / 60:.1f} minutes.")
-    print(f"  Résultats dans : {OUTPUT_DIR}/")
+    print(f"  OK Parsing termine en {elapsed / 60:.1f} minutes.")
+    print(f"  Resultats dans : {OUTPUT_DIR}/")
     print(BANNER)
 
 

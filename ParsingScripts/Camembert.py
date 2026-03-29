@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ==========================================================================
-  Parsing avec HopsParser (CamemBERT v2 / DeBERTa, fine-tuné sur UD GSD)
+  Parsing avec HopsParser
 
   Entrée  : CSV contenant les colonnes SMS, Transcodage_1, Transcodage_2
   Modèle  : dossier contenant config.json + weights.pt (hopsparser)
@@ -72,8 +72,8 @@ DIVERGENCE_KEYS = [
     "nb_phrases",
 ]
 
-BANNER = "=" * 76
-BATCH_SIZE = 32
+BANNER = "_" * 76
+BATCH_SIZE = 64
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -407,12 +407,7 @@ def main():
     parser_model = BiAffineParser.load(MODEL_PATH)
     parser_model = parser_model.to(device)
     parser_model.eval()
-    print(f"  ✓ Modèle chargé en {time.time() - t_load:.1f} s")
-
-    if torch.cuda.is_available():
-        print(f"      VRAM après chargement : "
-              f"{torch.cuda.memory_allocated(0)/1024**2:.0f} Mo")
-
+    
     # ──────────────────────────────────────────────────────────────
     # 3) ANALYSE SYNTAXIQUE (HopsParser, in-process)
     # ──────────────────────────────────────────────────────────────

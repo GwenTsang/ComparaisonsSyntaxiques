@@ -9,7 +9,7 @@
     • camembertav2-base-fsmb      (DeBERTa v2, HuggingFace)
     • camembertav2-base-sequoia   (DeBERTa v2, HuggingFace)
     • camembertav2-base-rhapsodie (DeBERTa v2, HuggingFace)
-    • zenodo-spoken               (RoBERTa / CamemBERT, Zenodo)
+    • zenodo-spoken               (RoBERTa, Zenodo)
 
   Usage :
     python download_model.py --list
@@ -21,8 +21,6 @@
 import argparse
 import os
 import pathlib
-import shutil
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -35,31 +33,31 @@ import urllib.request
 MODEL_REGISTRY = {
     "gsd": {
         "full_name": "camembertav2-base-gsd",
+        "repo_id": "almanach/camembertav2-base-gsd",
         "architecture": "DeBERTa v2",
         "source": "HuggingFace",
-        "url": "https://huggingface.co/almanach/camembertav2-base-gsd",
-        "method": "git_lfs",
+        "method": "huggingface",
     },
     "fsmb": {
         "full_name": "camembertav2-base-fsmb",
+        "repo_id": "almanach/camembertav2-base-fsmb",
         "architecture": "DeBERTa v2",
         "source": "HuggingFace",
-        "url": "https://huggingface.co/almanach/camembertav2-base-fsmb",
-        "method": "git_lfs",
+        "method": "huggingface",
     },
     "sequoia": {
         "full_name": "camembertav2-base-sequoia",
+        "repo_id": "almanach/camembertav2-base-sequoia",
         "architecture": "DeBERTa v2",
         "source": "HuggingFace",
-        "url": "https://huggingface.co/almanach/camembertav2-base-sequoia",
-        "method": "git_lfs",
+        "method": "huggingface",
     },
     "rhapsodie": {
         "full_name": "camembertav2-base-rhapsodie",
+        "repo_id": "almanach/camembertav2-base-rhapsodie",
         "architecture": "DeBERTa v2",
         "source": "HuggingFace",
-        "url": "https://huggingface.co/almanach/camembertav2-base-rhapsodie",
-        "method": "git_lfs",
+        "method": "huggingface",
     },
     "zenodo-spoken": {
         "full_name": "UD_all_spoken_French-camembert",
@@ -80,28 +78,34 @@ BANNER = "=" * 72
 # FONCTIONS DE TÉLÉCHARGEMENT
 # ════════════════════════════════════════════════════════════════════════
 
-def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-    """Lance une commande et affiche en temps réel."""
-    print(f"  $ {' '.join(cmd)}")
-    return subprocess.run(cmd, check=True, **kwargs)
-
-
-def download_hf_model(name: str, url: str, output_dir: str) -> str:
-    """Clone un modèle HuggingFace via git-lfs."""
+def download_hf_model(name: str, repo_id: str, output_dir: str) -> str:
+    """
+    Télécharge un modèle depuis HuggingFace via huggingface_hub.
+    Contrairement à git clone, cela gère correctement les fichiers LFS.
+    """
     dest = os.path.join(output_dir, MODEL_REGISTRY[name]["full_name"])
 
     if os.path.isdir(dest):
         print(f"  ℹ Modèle déjà présent : {dest}")
         return dest
 
-    # Vérifier que git et git-lfs sont disponibles
-    for tool in ("git",):
-        if shutil.which(tool) is None:
-            sys.exit(f"  ✗ '{tool}' introuvable. Installez-le avant de continuer.")
-
     print(f"\n  Téléchargement de {name} depuis HuggingFace…")
-    _run(["git", "lfs", "install"])
-    _run(["git", "clone", url, dest])
+    print(f"  Repo : {repo_id}")
+
+    try:
+        from huggingface_hub import snapshot_download
+    except ImportError:
+        sys.exit(
+            "  ✗ huggingface-hub non installé.\n"
+            "    Installez-le : pip install huggingface-hub"
+        )
+
+    os.makedirs(output_dir, exist_ok=True)
+    snapshot_download(
+        repo_id=repo_id,
+        local_dir=dest,
+        local_dir_use_symlinks=False,
+    )
 
     print(f"  ✓ {name} téléchargé → {dest}")
     return dest
@@ -222,8 +226,8 @@ def download_model(name: str, output_dir: str) -> str:
     info = MODEL_REGISTRY[name]
     method = info["method"]
 
-    if method == "git_lfs":
-        return download_hf_model(name, info["url"], output_dir)
+    if method == "huggingface":
+        return download_hf_model(name, info["repo_id"], output_dir)
     elif method == "http_tarxz":
         return download_zenodo_model(name, info["url"], output_dir)
     else:
