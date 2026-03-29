@@ -1,0 +1,37 @@
+modele,affinite,feature,sms_mean,philo_mean,lemonde_mean
+gsd,Philosophie / ecrit formel,distance_dependance_moy,2.3666,3.6088,3.4961
+gsd,Philosophie / ecrit formel,distance_dependance_max,8.2227,30.7271,22.8927
+gsd,Philosophie / ecrit formel,distance_dependance_var,5.5671,32.6304,26.7915
+gsd,Philosophie / ecrit formel,profondeur_arbre_moy,3.3265,7.0475,5.92
+gsd,Philosophie / ecrit formel,profondeur_arbre_max,3.7683,7.0577,5.92
+gsd,Philosophie / ecrit formel,nb_dependances_moy_phrase,8.5734,38.3235,29.9344
+fsmb,SMS / oral,distance_dependance_moy,2.3561,3.8672,3.4961
+fsmb,SMS / oral,distance_dependance_max,8.562,31.5567,22.8927
+fsmb,SMS / oral,distance_dependance_var,7.3015,46.1576,26.7915
+fsmb,SMS / oral,profondeur_arbre_moy,3.6915,8.6432,5.92
+fsmb,SMS / oral,profondeur_arbre_max,4.2857,8.6585,5.92
+fsmb,SMS / oral,nb_dependances_moy_phrase,8.5734,38.3235,29.9344
+sequoia,Philosophie / ecrit formel,distance_dependance_moy,2.4199,3.8061,3.4961
+sequoia,Philosophie / ecrit formel,distance_dependance_max,8.198,30.6524,22.8927
+sequoia,Philosophie / ecrit formel,distance_dependance_var,5.7417,35.5239,26.7915
+sequoia,Philosophie / ecrit formel,profondeur_arbre_moy,3.2751,6.8649,5.92
+sequoia,Philosophie / ecrit formel,profondeur_arbre_max,3.7007,6.8744,5.92
+sequoia,Philosophie / ecrit formel,nb_dependances_moy_phrase,8.5734,38.3235,29.9344
+rhapsodie,SMS / oral,distance_dependance_moy,2.2,3.8766,3.4961
+rhapsodie,SMS / oral,distance_dependance_max,7.667,30.8031,22.8927
+rhapsodie,SMS / oral,distance_dependance_var,4.473,36.7745,26.7915
+rhapsodie,SMS / oral,profondeur_arbre_moy,3.4913,6.85,5.92
+rhapsodie,SMS / oral,profondeur_arbre_max,3.962,6.8581,5.92
+rhapsodie,SMS / oral,nb_dependances_moy_phrase,8.5734,38.3235,29.9344
+zenodo-spoken,SMS / oral,distance_dependance_moy,2.2724,3.7183,3.4961
+zenodo-spoken,SMS / oral,distance_dependance_max,8.092,30.7651,22.8927
+zenodo-spoken,SMS / oral,distance_dependance_var,4.9973,35.1328,26.7915
+zenodo-spoken,SMS / oral,profondeur_arbre_moy,3.4376,7.1544,5.92
+zenodo-spoken,SMS / oral,profondeur_arbre_max,3.9033,7.1636,5.92
+zenodo-spoken,SMS / oral,nb_dependances_moy_phrase,8.5734,38.3235,29.9344
+stanza,generaliste,distance_dependance_moy,2.2225,3.4173,3.4961
+stanza,generaliste,distance_dependance_max,7.5093,27.8384,22.8927
+stanza,generaliste,distance_dependance_var,4.744,28.1274,26.7915
+stanza,generaliste,profondeur_arbre_moy,3.2126,6.9079,5.92
+stanza,generaliste,profondeur_arbre_max,3.6707,6.9796,5.92
+stanza,generaliste,nb_dependances_moy_phrase,7.8126,34.5903,29.9344

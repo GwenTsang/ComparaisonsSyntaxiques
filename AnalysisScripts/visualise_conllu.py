@@ -87,12 +87,29 @@ def read_conllu(path: str, sent_range: str | None = None) -> list[dict]:
 
 # ── displacy conversion ───────────────────────────────────────────────
 
-def to_displacy(sentence: dict) -> dict:
-    """Convert one CoNLL-U sentence to displacy manual-render format."""
-    words = [
-        {"text": t["form"], "tag": t["upos"] if t["upos"] != "_" else ""}
-        for t in sentence["tokens"]
-    ]
+def to_displacy(sentence: dict, highlight_chain: list[int] | None = None) -> dict:
+    """Convert one CoNLL-U sentence to displacy manual-render format.
+    
+    Si highlight_chain est specifie (liste d'IDs de tokens), 
+    seuls les arcs reliant ces tokens de maniere contigue seront conserves.
+    """
+    words = []
+    for t in sentence["tokens"]:
+        tag = ""
+        if t["upos"] != "_":
+            if highlight_chain is None or t["id"] in highlight_chain:
+                tag = t["upos"]
+        words.append({"text": t["form"], "tag": tag})
+        
+    # Filter valid edges if we only want to show a specific chain
+    chain_edges = set()
+    if highlight_chain:
+        for i in range(len(highlight_chain) - 1):
+            gov = highlight_chain[i]
+            dep = highlight_chain[i+1]
+            chain_edges.add((gov, dep))
+            chain_edges.add((dep, gov)) # to match unordered
+            
     arcs = []
     for t in sentence["tokens"]:
         if t["head"] == "_" or t["deprel"] == "_":
@@ -100,12 +117,23 @@ def to_displacy(sentence: dict) -> dict:
         head_id = int(t["head"])
         if head_id == 0:
             continue
-        di = t["id"] - 1
-        hi = head_id - 1
-        if di < hi:
-            arcs.append({"start": di, "end": hi, "label": t["deprel"], "dir": "right"})
+            
+        di = t["id"]
+        hi = head_id
+        
+        # If highlighting a chain, skip arcs not in the chain
+        if highlight_chain and (di, hi) not in chain_edges:
+            continue
+            
+        # Displacy uses 0-based indexing
+        di_idx = di - 1
+        hi_idx = hi - 1
+        
+        if di_idx < hi_idx:
+            arcs.append({"start": di_idx, "end": hi_idx, "label": t["deprel"], "dir": "right"})
         else:
-            arcs.append({"start": hi, "end": di, "label": t["deprel"], "dir": "left"})
+            arcs.append({"start": hi_idx, "end": di_idx, "label": t["deprel"], "dir": "left"})
+            
     return {"words": words, "arcs": arcs}
 
 
@@ -133,6 +161,66 @@ def check_and_warn(path: str, sentences: list[dict]) -> None:
         print("[OK] Fichier CoNLL-U valide et compatible UD.")
 
 
+# ── chains identification ─────────────────────────────────────────────
+
+def get_chains_of_length(tokens: list[dict], target_length: int) -> list[list[int]]:
+    """Retourne toutes les chaines (listes d'IDs) de la longueur specifiee."""
+    children = {t["id"]: [] for t in tokens}
+    for t in tokens:
+        if t["head"] != "_" and t["deprel"] != "_":
+            head_id = int(t["head"])
+            if head_id != 0 and head_id in children:
+                children[head_id].append(t["id"])
+
+    def get_paths(node_id: int) -> list[list[int]]:
+        if not children.get(node_id):
+            return [[node_id]]
+        paths = []
+        for child_id in children[node_id]:
+            for p in get_paths(child_id):
+                paths.append([node_id] + p)
+        return paths
+
+    all_chains = []
+    # On cherche a partir de chaque noeud pour trouver des sous-chaines aussi
+    for start_node in children.keys():
+        for p in get_paths(start_node):
+            # p est une liste de noeuds. target_length est le nombre de liens (arcs)
+            if len(p) - 1 >= target_length:
+                # On recupere exactement la sous-chaine de bonne longueur
+                # au cas ou le chemin est plus long
+                for i in range(len(p) - target_length):
+                    all_chains.append(p[i : i + target_length + 1])
+                    
+    return all_chains
+
+def extract_special_chains(sentences: list[dict], lengths: list[int] = [7, 5, 4], max_per_length: int = 2) -> list[tuple[dict, list[int], int]]:
+    """Extrait des exemples de phrases pour les longueurs specifiees."""
+    results = []
+    found_counts = {l: 0 for l in lengths}
+    
+    # On traque les textes deja ajoutes pour eviter les doublons de phrases
+    added_texts = set()
+    
+    for s in sentences:
+        if all(c >= max_per_length for c in found_counts.values()):
+            break
+            
+        for length in lengths:
+            if found_counts[length] >= max_per_length:
+                continue
+                
+            chains = get_chains_of_length(s["tokens"], length)
+            if chains and s["text"] not in added_texts:
+                results.append((s, chains[0], length))
+                found_counts[length] += 1
+                added_texts.add(s["text"])
+                break  # On passe a la phrase suivante
+                
+    return results
+
+
+
 # ── main ──────────────────────────────────────────────────────────────
 
 def parse_args() -> argparse.Namespace:
@@ -149,12 +237,17 @@ def parse_args() -> argparse.Namespace:
         "--output", default="visualisation_arbres.html",
         help="Chemin du fichier HTML exporté (defaut: visualisation_arbres.html).",
     )
+    p.add_argument(
+        "--find-chains", action="store_true",
+        help="Recherche et isole deux chaines de dependances de "
+             "4, 5 et 7 niveaux au lieu de tout afficher.",
+    )
     return p.parse_args()
 
 
 def main() -> None:
     from spacy import displacy
-
+    
     args = parse_args()
 
     print(f"\nLecture de : {args.conllu}")
@@ -173,20 +266,64 @@ def main() -> None:
         print("\nAucune phrase avec annotations. Rien a afficher.")
         sys.exit(1)
 
-    manual_data = [to_displacy(s) for s in to_serve]
+    manual_data = []
+    html_blocks = []
+    
+    if args.find_chains:
+        print("\nRecherche de chaines specifiques (7, 5 et 4 niveaux)...")
+        examples = extract_special_chains(to_serve, lengths=[7, 5, 4], max_per_length=2)
+        
+        for sent, chain, length in examples:
+            print(f" - Trouve chaine de {length} niveaux : {sent['text'][:60]}...")
+            
+            # Preparation de la presentation HTML
+            chain_words = [t["form"] for t in sent["tokens"] if t["id"] in chain]
+            chain_rels = []
+            for i in range(len(chain) - 1):
+                dep = [t for t in sent["tokens"] if t["id"] == chain[i+1]][0]
+                chain_rels.append(dep["deprel"])
+                
+            desc_html = (
+                f"<div style='margin-bottom: 2rem; padding: 1rem; border-left: 5px solid #ff4b4b; background-color: #ffeaea;'>"
+                f"<h2 style='margin-top: 0; color: #cc0000;'>Chaîne de {length} niveaux</h2>"
+                f"<p><strong>Motifs :</strong> {' → '.join(chain_rels)}</p>"
+                f"<p><strong>Mots concernés :</strong> {' → '.join(chain_words)}</p>"
+                f"</div>"
+            )
+            
+            displacy_data = to_displacy(sent, highlight_chain=chain)
+            svg = displacy.render(
+                [displacy_data],
+                style="dep",
+                page=False,
+                manual=True,
+                jupyter=False,
+                options={"distance": 75, "compact": False, "bg": "#f9f9f9", "color": "#cc0000", "word_spacing": 25},
+            )
+            html_blocks.append(desc_html + svg + "<hr style='margin: 3rem 0; border: 1px solid #ddd;'/>")
+            
+        if not html_blocks:
+            print("Aucune chaine trouvee dans le corpus/la plage donnee.")
+            sys.exit(0)
+            
+        css_inject = "<style>.displacy-word, .displacy-tag { fill: #000000 !important; }</style>"
+        final_html = f"<html><head><meta charset='utf-8'><title>Chaines syntaxiques</title>{css_inject}</head><body style='font-family: sans-serif; margin: 2rem;'>{''.join(html_blocks)}</body></html>"
 
-    print(f"\nGénèration du rendu HTML des arbres...")
-    html = displacy.render(
-        manual_data,
-        style="dep",
-        page=True,
-        manual=True,
-        jupyter=False,
-        options={"distance": 100, "compact": True, "bg": "#f9f9f9", "color": "#000"},
-    )
+            
+    else:
+        manual_data = [to_displacy(s) for s in to_serve]
+        print(f"\nGénèration du rendu HTML des arbres...")
+        final_html = displacy.render(
+            manual_data,
+            style="dep",
+            page=True,
+            manual=True,
+            jupyter=False,
+            options={"distance": 100, "compact": True, "bg": "#f9f9f9", "color": "#000"},
+        )
     
     with open(args.output, "w", encoding="utf-8") as f:
-        f.write(html)
+        f.write(final_html)
         
     print(f"[SUCCESS] Visualisation sauvegardée dans : {args.output}")
     print("Telechargez et ouvrez ce fichier dans votre navigateur pour voir les arbres.")

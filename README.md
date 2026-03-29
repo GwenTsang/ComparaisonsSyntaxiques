@@ -1,8 +1,18 @@
 # Pipeline d'Analyse et de Comparaison Syntaxique
 
-Ce petit projet vise à faire une analyse lexicométrique et syntaxique comparative de corpus de différents genres (SMS, Philosophie, Le Monde). 
+Nous proposons une analyse lexicométrique et syntaxique de corpus de trois différents genres très distincts : le genre SMS, le genre philosophique, et le genre journalistique.
 
-Le projet  utilise deux pipelines principales :
+Plus précisément :
+
+* Un corpus de 11 dissertations de philosophie rédigées lors des concours du CAPES et de l’agrégation (provenant de [GwenTsang/concours-de-philosophie](https://github.com/GwenTsang/concours-de-philosophie)).
+* Un corpus de 1000 SMS dans trois versions : version brute, version transcrite par des étudiants et version transcrite par des chercheurs (téléchargé depuis [88milsms.huma-num.fr](http://88milsms.huma-num.fr/corpus_en.html)).
+* Un corpus d’articles du journal “Le Monde” déjà annoté en syntaxe de dépendances (téléchargeable depuis [UD_French-FTB](https://universaldependencies.org/treebanks/fr_ftb/) / [GitHub](https://github.com/UniversalDependencies/UD_French-FTB)).
+
+### Motivation
+
+Nous nous sommes aperçus que les parsers ne fonctionnaient pas extrêmement bien sur le langage SMS. Pour pallier cela, nous avons utilisé certains parsers ayant été entraînés sur des corpus assez proches, par exemple [camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb) qui a été entraîné sur le corpus FSMB (French Social Media Bank, cf. [llf.cnrs.fr](http://www.llf.cnrs.fr/fr/node/5746)).
+
+Le projet utilise deux pipelines principales :
 
 1. **Un orchestrateur de parsing multi-modèles** (`ParsingScripts/orchestrator.py`) qui transforme les textes bruts en représentations sous forme d'arbres de dépendances.
 

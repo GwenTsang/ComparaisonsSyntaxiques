@@ -1,4 +1,4 @@
-sms_id,colonne,nombre_subordonnees_qui,proportion_subordonnees_qui,nombre_subordonnees_que,proportion_subordonnees_que,nombre_subordonnees_prep_lequel,proportion_subordonnees_prep_lequel,nombre_subordonnees_dont,proportion_subordonnees_dont,nombre_completives,proportion_completives,nombre_hypothetiques,proportion_hypothetiques,nombre_gerondif,proportion_gerondif,nombre_incises,proportion_incises,nombre_propositions_coordonnees,proportion_propositions_coordonnees
+texte_id,colonne,nombre_subordonnees_qui,proportion_subordonnees_qui,nombre_subordonnees_que,proportion_subordonnees_que,nombre_subordonnees_prep_lequel,proportion_subordonnees_prep_lequel,nombre_subordonnees_dont,proportion_subordonnees_dont,nombre_completives,proportion_completives,nombre_hypothetiques,proportion_hypothetiques,nombre_gerondif,proportion_gerondif,nombre_incises,proportion_incises,nombre_propositions_coordonnees,proportion_propositions_coordonnees
 1,SMS,0,0.0,0,0.0,0,0.0,0,0.0,3,0.6,0,0.0,0,0.0,0,0.0,0,0.0
 2,SMS,0,0.0,0,0.0,0,0.0,0,0.0,1,0.3333,1,0.3333,0,0.0,0,0.0,0,0.0
 3,SMS,0,0.0,0,0.0,0,0.0,0,0.0,1,0.1667,0,0.0,0,0.0,0,0.0,0,0.0

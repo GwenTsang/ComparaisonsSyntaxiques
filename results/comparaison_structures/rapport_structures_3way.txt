@@ -1,0 +1,129 @@
+==========================================================================================
+  COMPARAISON 3-WAY DES STRUCTURES SYNTAXIQUES
+  SMS  vs  PHILOSOPHIE  vs  LE MONDE (UD_FTB)
+==========================================================================================
+
+  1. DÉTAIL PAR MODÈLE
+  -------------------------------------------------------------------------------------
+  Modèle           Structure                SMS moy Philo moy   LeMonde
+  -------------------------------------------------------------------------------------
+  fsmb             Sub. rel. (qui)            0.000     0.000     0.198
+  fsmb             Sub. rel. (que)            0.000     0.000     0.050
+  fsmb             Sub. prép+lequel           0.000     0.000     0.031
+  fsmb             Sub. rel. (dont)           0.000     0.000     0.076
+  fsmb             Complétives                0.000     0.000     0.441
+  fsmb             Hypothétiques              0.000     0.000     0.010
+  fsmb             Gérondif                   0.000     0.000     0.026
+  fsmb             Incises                    0.000     0.000     0.282
+  fsmb             Prop. coordonnées          0.000     0.000     0.132
+
+  gsd              Sub. rel. (qui)            0.018     0.423     0.198
+  gsd              Sub. rel. (que)            0.007     0.094     0.050
+  gsd              Sub. prép+lequel           0.000     0.064     0.031
+  gsd              Sub. rel. (dont)           0.001     0.042     0.076
+  gsd              Complétives                0.264     1.030     0.441
+  gsd              Hypothétiques              0.047     0.123     0.010
+  gsd              Gérondif                   0.000     0.000     0.026
+  gsd              Incises                    0.178     0.513     0.282
+  gsd              Prop. coordonnées          0.093     0.334     0.132
+
+  rhapsodie        Sub. rel. (qui)            0.018     0.424     0.198
+  rhapsodie        Sub. rel. (que)            0.009     0.085     0.050
+  rhapsodie        Sub. prép+lequel           0.000     0.065     0.031
+  rhapsodie        Sub. rel. (dont)           0.001     0.042     0.076
+  rhapsodie        Complétives                0.286     0.975     0.441
+  rhapsodie        Hypothétiques              0.047     0.124     0.010
+  rhapsodie        Gérondif                   0.000     0.000     0.026
+  rhapsodie        Incises                    0.097     0.697     0.282
+  rhapsodie        Prop. coordonnées          0.045     0.263     0.132
+
+  sequoia          Sub. rel. (qui)            0.017     0.421     0.198
+  sequoia          Sub. rel. (que)            0.007     0.101     0.050
+  sequoia          Sub. prép+lequel           0.000     0.067     0.031
+  sequoia          Sub. rel. (dont)           0.001     0.042     0.076
+  sequoia          Complétives                0.303     1.050     0.441
+  sequoia          Hypothétiques              0.047     0.123     0.010
+  sequoia          Gérondif                   0.000     0.000     0.026
+  sequoia          Incises                    0.047     0.336     0.282
+  sequoia          Prop. coordonnées          0.084     0.306     0.132
+
+  stanza           Sub. rel. (qui)            0.018     0.399     0.198
+  stanza           Sub. rel. (que)            0.010     0.147     0.050
+  stanza           Sub. prép+lequel           0.000     0.062     0.031
+  stanza           Sub. rel. (dont)           0.001     0.040     0.076
+  stanza           Complétives                0.266     0.883     0.441
+  stanza           Hypothétiques              0.054     0.134     0.010
+  stanza           Gérondif                   0.002     0.084     0.026
+  stanza           Incises                    0.095     0.354     0.282
+  stanza           Prop. coordonnées          0.079     0.301     0.132
+
+  zenodo-spoken    Sub. rel. (qui)            0.018     0.424     0.198
+  zenodo-spoken    Sub. rel. (que)            0.009     0.090     0.050
+  zenodo-spoken    Sub. prép+lequel           0.000     0.061     0.031
+  zenodo-spoken    Sub. rel. (dont)           0.001     0.042     0.076
+  zenodo-spoken    Complétives                0.271     0.904     0.441
+  zenodo-spoken    Hypothétiques              0.047     0.125     0.010
+  zenodo-spoken    Gérondif                   0.000     0.000     0.026
+  zenodo-spoken    Incises                    0.085     0.534     0.282
+  zenodo-spoken    Prop. coordonnées          0.069     0.265     0.132
+
+
+  2. SYNTHÈSE GLOBALE (MOYENNE INTER-MODÈLES + MEILLEUR MODÈLE)
+  -------------------------------------------------------------------------------------
+  Structure               SMS glob  SMS best  Philo glob  Philo best  Le Monde
+  -------------------------------------------------------------------------------------
+  Sub. rel. (qui)           0.0149    0.0000      0.3490      0.4226    0.1978
+  Sub. rel. (que)           0.0069    0.0000      0.0869      0.0942    0.0502
+  Sub. prép+lequel          0.0000    0.0000      0.0531      0.0639    0.0311
+  Sub. rel. (dont)          0.0011    0.0000      0.0349      0.0424    0.0760
+  Complétives               0.2316    0.0000      0.8079      1.0296    0.4412
+  Hypothétiques             0.0402    0.0000      0.1052      0.1231    0.0098
+  Gérondif                  0.0003    0.0000      0.0147      0.0000    0.0264
+  Incises                   0.0839    0.0000      0.4051      0.5128    0.2823
+  Prop. coordonnées         0.0617    0.0000      0.2452      0.3338    0.1316
+
+
+  3. TESTS STATISTIQUES (Mann-Whitney U, seuil α = 0.05)
+     Comparaison sur les comptages par phrase, meilleur modèle par genre.
+  -------------------------------------------------------------------------------------
+  Structure                 SMS↔Philo     p-val  SMS↔LeMonde     p-val  Philo↔LeMonde     p-val
+  -------------------------------------------------------------------------------------
+  Sub. rel. (qui)                 ***    0.0000          ***    0.0000            ***    0.0000
+  Sub. rel. (que)                 ***    0.0000          ***    0.0000            ***    0.0000
+  Sub. prép+lequel                ***    0.0000          ***    0.0000            ***    0.0000
+  Sub. rel. (dont)                ***    0.0000          ***    0.0000            ***    0.0000
+  Complétives                     ***    0.0000          ***    0.0000            ***    0.0000
+  Hypothétiques                   ***    0.0000          ***    0.0000            ***    0.0000
+  Gérondif                         ns    1.0000          ***    0.0000            ***    0.0000
+  Incises                         ***    0.0000          ***    0.0000            ***    0.0000
+  Prop. coordonnées               ***    0.0000          ***    0.0000            ***    0.0000
+
+  Légende : *** p<0.001  ** p<0.01  * p<0.05  ns = non significatif
+
+
+  4. INTERPRÉTATION
+  -------------------------------------------------------------------------------------
+  Nombre de structures comparées : 9
+  Différences significatives (p < 0.05) :
+    • SMS ↔ Philosophie  : 8/9
+    • SMS ↔ Le Monde     : 9/9
+    • Philosophie ↔ Le Monde : 9/9
+
+  → OUI, il existe des différences significatives entre les corpus.
+
+  Structures présentant des différences significatives :
+    • Sub. rel. (qui)        : SMS↔Philo (None), SMS↔LeMonde (***), Philo↔LeMonde (***)
+    • Sub. rel. (que)        : SMS↔Philo (***), SMS↔LeMonde (***), Philo↔LeMonde (***)
+    • Sub. prép+lequel       : SMS↔Philo (***), SMS↔LeMonde (***), Philo↔LeMonde (***)
+    • Sub. rel. (dont)       : SMS↔Philo (***), SMS↔LeMonde (***), Philo↔LeMonde (***)
+    • Complétives            : SMS↔Philo (None), SMS↔LeMonde (None), Philo↔LeMonde (***)
+    • Hypothétiques          : SMS↔Philo (***), SMS↔LeMonde (***), Philo↔LeMonde (***)
+    • Gérondif               : SMS↔LeMonde (***), Philo↔LeMonde (***)
+    • Incises                : SMS↔Philo (None), SMS↔LeMonde (None), Philo↔LeMonde (***)
+    • Prop. coordonnées      : SMS↔Philo (None), SMS↔LeMonde (***), Philo↔LeMonde (***)
+
+  Ces résultats confirment que la complexité syntaxique (variété et fréquence
+  des structures subordonnées, incises, et coordonnées) diffère entre le langage
+  informel/oral (SMS), le journalisme (Le Monde) et la prose philosophique.
+
+==========================================================================================

@@ -1,0 +1,10 @@
+corpus,feature,mad_moyen,mad_ecart_type
+Texte,profondeur_arbre_max,1.142,0.5765
+Texte,profondeur_arbre_moy,1.1546,0.5833
+Texte,distance_dependance_max,2.1174,3.225
+Texte,distance_dependance_moy,0.4763,0.5748
+Texte,distance_dependance_var,10.326,23.5781
+Texte,nb_dependances_moy_phrase,1.3456,2.7393
+Texte,nb_dependances_var_phrase,2.546,18.7563
+Texte,nb_phrases,0.0204,0.0853
+Texte,nb_tokens,0.814,0.779
