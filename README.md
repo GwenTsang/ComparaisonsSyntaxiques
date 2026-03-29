@@ -13,7 +13,6 @@ Plus précisément :
 Nous nous sommes aperçus que les parsers du site [Texttokids](https://texttokids.ortolang.fr) ne fonctionnaient pas extrêmement bien sur le langage SMS.
 
 après avoir consulté le code source des parsers proposés sur ce site [à ce lien](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/tree/main/text_complexity/server/src/processor/syntaxe), on s'en est inspiré pour reproduire les deux mêmes tâches (complexité dans les dépendances syntaxiques et complexité dans les structures syntaxiques), mais avec d'autres modèles :
-Voici le tableau avec la colonne **“Lien corpus”** ajoutée :
 
 | Nom                      | Genre textuel du corpus d’entraînement                                                         | Lien modèle                                                                 | Lien corpus                                                                                   |
 | ------------------------ | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
