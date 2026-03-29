@@ -138,26 +138,45 @@ def detect_structures(sentences: list[ConlluSentence]) -> dict:
 
         for i, w in enumerate(words):
             # ── Relatives introduites par un pronom relatif ──
-            if w.id != 1 and w.upos == "PRON" and "PronType=Rel" in w.feats:
-                if w.lemma == "qui" and w.deprel == "nsubj":
-                    counts["subordonnees_qui"] += 1
-                    rel_clause_trigger = True
-                elif w.lemma == "que" and w.deprel == "obj":
-                    counts["subordonnees_que"] += 1
-                    rel_clause_trigger = True
-                elif w.lemma == "dont":
+            is_rel_pronoun = False
+            lem = w.lemma.lower() if w.lemma else ""
+            
+            if "PronType=Rel" in w.feats:
+                is_rel_pronoun = True
+            elif w.upos == "PRON" and lem in ("qui", "que", "qu'", "dont", "lequel", "laquelle", "lesquels", "lesquelles", "auquel", "auxquels", "auxquelles", "duquel", "desquels", "desquelles"):
+                is_rel_pronoun = True
+
+            if is_rel_pronoun and w.id != 1:
+                if lem == "qui":
+                    if w.deprel in ("nsubj", "nsubj:pass"):
+                        counts["subordonnees_qui"] += 1
+                        rel_clause_trigger = True
+                elif lem in ("que", "qu'"):
+                    if w.deprel == "obj":
+                        counts["subordonnees_que"] += 1
+                        rel_clause_trigger = True
+                elif lem == "dont":
                     counts["subordonnees_dont"] += 1
                     rel_clause_trigger = True
-
-            # ── Prép. + lequel / laquelle / lesquels / lesquelles ──
-            if w.upos == "ADP":
-                prep_trigger = True
-            elif prep_trigger:
-                if w.lemma in ("lequel", "laquelle", "lesquels", "lesquelles",
-                               "auquel", "auxquels", "auxquelles",
-                               "duquel", "desquels", "desquelles"):
+                elif lem in ("lequel", "laquelle", "lesquels", "lesquelles", "auquel", "auxquels", "auxquelles", "duquel", "desquels", "desquelles"):
                     counts["subordonnees_prep_lequel"] += 1
-                prep_trigger = False
+                    rel_clause_trigger = True
+                elif lem == "_":
+                    # Fallback UD_FTB (où le lemme est manquant)
+                    if w.deprel in ("nsubj", "nsubj:pass"):
+                        counts["subordonnees_qui"] += 1
+                        rel_clause_trigger = True
+                    elif w.deprel == "obj":
+                        counts["subordonnees_que"] += 1
+                        rel_clause_trigger = True
+                    else:
+                        is_preceded_by_adp = (i > 0 and words[i-1].upos == "ADP")
+                        if is_preceded_by_adp:
+                            counts["subordonnees_prep_lequel"] += 1
+                            rel_clause_trigger = True
+                        elif w.deprel in ("iobj", "nmod", "obl"):
+                            counts["subordonnees_dont"] += 1
+                            rel_clause_trigger = True
 
             # ── Complétives (ccomp / xcomp) ──
             if w.upos == "VERB" and w.deprel in ("ccomp", "xcomp"):
