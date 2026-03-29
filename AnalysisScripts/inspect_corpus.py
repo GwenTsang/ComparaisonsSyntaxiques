@@ -52,14 +52,15 @@ BANNER = "=" * 76
 def load_nlp():
     """Load the spacy_stanza pipeline for French."""
     import torch
-    import numpy as np
-
-    # PyTorch 2.6+ safe globals for Stanza models
-    torch.serialization.add_safe_globals([
-        np.core.multiarray._reconstruct,
-        np.ndarray,
-        np.dtype,
-    ])
+    
+    # PyTorch 2.6+ workaround: monkey-patch torch.load to default to weights_only=False
+    # because Stanza models require arbitrary code execution during unpickling.
+    _original_torch_load = torch.load
+    def _patched_torch_load(*args, **kwargs):
+        if "weights_only" not in kwargs:
+            kwargs["weights_only"] = False
+        return _original_torch_load(*args, **kwargs)
+    torch.load = _patched_torch_load
 
     import spacy_stanza
 
