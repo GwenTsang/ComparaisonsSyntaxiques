@@ -181,6 +181,7 @@ def main() -> None:
         style="dep",
         page=True,
         manual=True,
+        jupyter=False,
         options={"distance": 100, "compact": True, "bg": "#f9f9f9", "color": "#000"},
     )
     
