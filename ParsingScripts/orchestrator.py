@@ -92,10 +92,14 @@ def section(title: str):
 
 def run_script(args: list[str], label: str) -> bool:
     """Lance un script Python en sous-processus (isolation VRAM)."""
+    env = os.environ.copy()
+    env["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    env["LOGURU_LEVEL"] = "ERROR"
+
     cmd = [sys.executable] + args
     print(f"\n  $ {' '.join(cmd)}")
     t0 = time.time()
-    result = subprocess.run(cmd, cwd=str(_REPO_ROOT))
+    result = subprocess.run(cmd, cwd=str(_REPO_ROOT), env=env)
     dt = time.time() - t0
     if result.returncode == 0:
         print(f"  OK {label} ({dt:.0f}s)")

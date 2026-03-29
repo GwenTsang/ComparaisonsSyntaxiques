@@ -16,6 +16,10 @@
 # ════════════════════════════════════════════════════════════════════════
 import argparse
 import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["LOGURU_LEVEL"] = "ERROR"
+
 import pathlib
 import re
 import sys

@@ -14,3 +14,4 @@ torchvision
 numpy<2.0
 pandas
 scipy
+stanza

@@ -18,6 +18,10 @@
 # ════════════════════════════════════════════════════════════════════════
 import argparse
 import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["LOGURU_LEVEL"] = "ERROR"
+
 import pathlib
 import re
 import sys
@@ -187,7 +191,7 @@ def group_by_text(parsed: list[dict], smap: list[tuple], N: int) -> dict:
 # HOPSPARSER : EXÉCUTION IN-PROCESS
 # ════════════════════════════════════════════════════════════════════════
 def run_hops_inprocess(parser_model, inp: str, outp: str,
-                       batch_size: int = 32) -> tuple[bool, str]:
+                       batch_size: int = 64) -> tuple[bool, str]:
     try:
         from hopsparser.utils import smart_open
         with smart_open(inp) as in_stream, smart_open(outp, "w") as out_stream:
