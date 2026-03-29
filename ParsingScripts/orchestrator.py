@@ -282,85 +282,161 @@ def step_compare(models: list[str], output_dir: str):
         print("  ! scipy non installe, comparaison statistique impossible.")
         return
 
+    import pandas as pd
+
     compare_dir = os.path.join(output_dir, "comparaison_corpora")
     os.makedirs(compare_dir, exist_ok=True)
 
-    # Collect syntactic structure data per corpus
-    def load_structures(corpus_name: str) -> dict[str, list[float]]:
-        """Load all structure counts from all models for a corpus."""
-        all_vals: dict[str, list[float]] = {feat: [] for feat in STRUCTURE_FEATURES}
+    # ── helpers ────────────────────────────────────────────────────────
+
+    def _load_feature_values(
+        corpus_name: str,
+        features: list[str],
+        csv_filename: str,
+        col_prefix: str = "",
+    ) -> dict[str, list[float]]:
+        """Load feature values across all models for a given corpus.
+
+        Parameters
+        ----------
+        corpus_name : str
+            "SMS" or "Philosophie".
+        features : list[str]
+            Feature names to look up.
+        csv_filename : str
+            Name of the CSV inside each model directory
+            (e.g. "structures_syntaxiques.csv" or "resultats_par_sms.csv").
+        col_prefix : str
+            Prefix prepended to each feature name to form the column name
+            (e.g. "nombre_" for structure features, "" for dep features).
+        """
+        all_vals: dict[str, list[float]] = {feat: [] for feat in features}
         for model_name in models:
-            struct_csv = os.path.join(
-                output_dir, corpus_name, model_name,
-                "structures_syntaxiques.csv",
+            csv_path = os.path.join(
+                output_dir, corpus_name, model_name, csv_filename,
             )
-            if not os.path.isfile(struct_csv):
+            if not os.path.isfile(csv_path):
                 continue
             try:
-                import pandas as pd
-                df = pd.read_csv(struct_csv)
-                for feat in STRUCTURE_FEATURES:
-                    col = f"nombre_{feat}"
+                df = pd.read_csv(csv_path)
+                for feat in features:
+                    col = f"{col_prefix}{feat}"
                     if col in df.columns:
-                        vals = df[col].dropna().tolist()
+                        vals = pd.to_numeric(df[col], errors="coerce") \
+                                 .dropna().tolist()
                         all_vals[feat].extend(vals)
             except Exception as e:
-                print(f"  ! Erreur lecture {struct_csv}: {e}")
+                print(f"  ! Erreur lecture {csv_path}: {e}")
         return all_vals
 
-    sms_data = load_structures("SMS")
-    philo_data = load_structures("Philosophie")
+    def _run_mann_whitney(
+        sms_data: dict[str, list[float]],
+        philo_data: dict[str, list[float]],
+        features: list[str],
+        group_label: str,
+    ) -> list[dict]:
+        """Print & return Mann-Whitney U results for *features*.
 
-    # Statistical tests (Mann-Whitney U)
-    rows = []
-    print(f"\n  {'Feature':<35} {'SMS moy':>10} {'Philo moy':>10} "
-          f"{'U stat':>10} {'p-value':>12} {'Signif':>8}")
-    print("  " + "-" * 90)
+        Parameters
+        ----------
+        group_label : str
+            Human-readable label printed as a sub-header
+            (e.g. "Structure features" or "Dependency features").
+        """
+        print(f"\n  ── {group_label} ──")
+        print(f"  {'Feature':<35} {'SMS moy':>10} {'Philo moy':>10} "
+              f"{'U stat':>10} {'p-value':>12} {'Signif':>8}")
+        print("  " + "-" * 90)
 
-    for feat in STRUCTURE_FEATURES:
-        sms_vals = sms_data.get(feat, [])
-        philo_vals = philo_data.get(feat, [])
+        rows: list[dict] = []
+        for feat in features:
+            sms_vals = sms_data.get(feat, [])
+            philo_vals = philo_data.get(feat, [])
 
-        if len(sms_vals) < 5 or len(philo_vals) < 5:
-            print(f"  {feat:<35} {'N/A':>10} {'N/A':>10} "
-                  f"{'':>10} {'':>12} {'trop peu':>8}")
-            continue
+            if len(sms_vals) < 5 or len(philo_vals) < 5:
+                print(f"  {feat:<35} {'N/A':>10} {'N/A':>10} "
+                      f"{'':>10} {'':>12} {'trop peu':>8}")
+                continue
 
-        sms_mean = float(np.mean(sms_vals))
-        philo_mean = float(np.mean(philo_vals))
+            sms_mean = float(np.mean(sms_vals))
+            philo_mean = float(np.mean(philo_vals))
 
-        try:
-            u_stat, p_value = sp_stats.mannwhitneyu(
-                sms_vals, philo_vals, alternative="two-sided"
-            )
-        except ValueError:
-            u_stat, p_value = 0.0, 1.0
+            try:
+                u_stat, p_value = sp_stats.mannwhitneyu(
+                    sms_vals, philo_vals, alternative="two-sided",
+                )
+            except ValueError:
+                u_stat, p_value = 0.0, 1.0
 
-        # Effect size (rank-biserial correlation)
-        n1, n2 = len(sms_vals), len(philo_vals)
-        effect_size = 1 - (2 * u_stat) / (n1 * n2) if n1 * n2 > 0 else 0.0
+            # Effect size (rank-biserial correlation)
+            n1, n2 = len(sms_vals), len(philo_vals)
+            effect_size = 1 - (2 * u_stat) / (n1 * n2) if n1 * n2 > 0 else 0.0
 
-        sig = "***" if p_value < 0.001 else "**" if p_value < 0.01 \
-              else "*" if p_value < 0.05 else ""
+            sig = ("***" if p_value < 0.001
+                   else "**" if p_value < 0.01
+                   else "*" if p_value < 0.05
+                   else "")
 
-        print(f"  {feat:<35} {sms_mean:>10.2f} {philo_mean:>10.2f} "
-              f"{u_stat:>10.0f} {p_value:>12.2e} {sig:>8}")
+            print(f"  {feat:<35} {sms_mean:>10.2f} {philo_mean:>10.2f} "
+                  f"{u_stat:>10.0f} {p_value:>12.2e} {sig:>8}")
 
-        rows.append({
-            "feature": feat,
-            "sms_n": len(sms_vals),
-            "sms_mean": round(sms_mean, 4),
-            "sms_std": round(float(np.std(sms_vals)), 4),
-            "philo_n": len(philo_vals),
-            "philo_mean": round(philo_mean, 4),
-            "philo_std": round(float(np.std(philo_vals)), 4),
-            "mann_whitney_U": round(u_stat, 2),
-            "p_value": p_value,
-            "effect_size": round(effect_size, 4),
-            "significatif": sig,
-        })
+            rows.append({
+                "feature": feat,
+                "group": group_label,
+                "sms_n": len(sms_vals),
+                "sms_mean": round(sms_mean, 4),
+                "sms_std": round(float(np.std(sms_vals)), 4),
+                "philo_n": len(philo_vals),
+                "philo_mean": round(philo_mean, 4),
+                "philo_std": round(float(np.std(philo_vals)), 4),
+                "mann_whitney_U": round(u_stat, 2),
+                "p_value": p_value,
+                "effect_size": round(effect_size, 4),
+                "significatif": sig,
+            })
+        return rows
 
-    # Export CSV
+    # ── load data ─────────────────────────────────────────────────────
+
+    # 1) Structure features  (from structures_syntaxiques.csv)
+    sms_struct = _load_feature_values(
+        "SMS", STRUCTURE_FEATURES,
+        csv_filename="structures_syntaxiques.csv",
+        col_prefix="nombre_",
+    )
+    philo_struct = _load_feature_values(
+        "Philosophie", STRUCTURE_FEATURES,
+        csv_filename="structures_syntaxiques.csv",
+        col_prefix="nombre_",
+    )
+
+    # 2) Dependency features  (from resultats_par_sms.csv)
+    sms_dep = _load_feature_values(
+        "SMS", DEP_FEATURES,
+        csv_filename="resultats_par_sms.csv",
+        col_prefix="",
+    )
+    philo_dep = _load_feature_values(
+        "Philosophie", DEP_FEATURES,
+        csv_filename="resultats_par_sms.csv",
+        col_prefix="",
+    )
+
+    # ── statistical tests ─────────────────────────────────────────────
+
+    rows: list[dict] = []
+
+    rows.extend(_run_mann_whitney(
+        sms_struct, philo_struct, STRUCTURE_FEATURES,
+        group_label="Structures syntaxiques",
+    ))
+    rows.extend(_run_mann_whitney(
+        sms_dep, philo_dep, DEP_FEATURES,
+        group_label="Metriques de dependance",
+    ))
+
+    # ── export CSV ────────────────────────────────────────────────────
+
     if rows:
         csv_out = os.path.join(compare_dir, "comparaison_syntaxique.csv")
         fieldnames = list(rows[0].keys())
@@ -370,7 +446,8 @@ def step_compare(models: list[str], output_dir: str):
             writer.writerows(rows)
         print(f"\n  -> {csv_out}")
 
-    # Human-readable summary
+    # ── human-readable summary ────────────────────────────────────────
+
     summary_path = os.path.join(compare_dir, "resume_comparaison.txt")
     with open(summary_path, "w", encoding="utf-8") as f:
         f.write("COMPARAISON STATISTIQUE : SMS vs PHILOSOPHIE\n")
@@ -388,10 +465,10 @@ def step_compare(models: list[str], output_dir: str):
         if significant:
             significant.sort(key=lambda r: r["p_value"])
             for r in significant:
-                direction = "SMS > Philo" if r["sms_mean"] > r["philo_mean"] \
-                            else "Philo > SMS"
+                direction = ("SMS > Philo" if r["sms_mean"] > r["philo_mean"]
+                             else "Philo > SMS")
                 f.write(
-                    f"  {r['feature']:<35} p={r['p_value']:.2e}  "
+                    f"  [{r['group']}] {r['feature']:<30} p={r['p_value']:.2e}  "
                     f"effect={r['effect_size']:.3f}  ({direction})\n"
                 )
         else:
@@ -401,7 +478,7 @@ def step_compare(models: list[str], output_dir: str):
         f.write("-" * 60 + "\n")
         non_sig = [r for r in rows if r["p_value"] >= 0.05]
         for r in non_sig:
-            f.write(f"  {r['feature']:<35} p={r['p_value']:.2e}\n")
+            f.write(f"  [{r['group']}] {r['feature']:<30} p={r['p_value']:.2e}\n")
 
     print(f"  -> {summary_path}")
 
