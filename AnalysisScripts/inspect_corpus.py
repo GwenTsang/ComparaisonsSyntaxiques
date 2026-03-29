@@ -2,16 +2,14 @@
 # -*- coding: utf-8 -*-
 """
 ==========================================================================
-  Inspection manuelle du corpus avec spacy_stanza
-
-  Utilise le pipeline spacy_stanza (modele Stanza fr) pour parser des
-  phrases et visualiser les arbres de dependance via displacy.
+  Inspection manuelle du corpus avec spacy_stanza / ConLL-U
 
   Modes d'utilisation :
-    1) Texte libre en argument
-    2) Lecture d'un CSV de corpus (SMS ou Philosophie)
+    1) Texte libre en argument  (re-parse via Stanza)
+    2) Lecture d'un CSV de corpus (SMS ou Philosophie)  (re-parse via Stanza)
     3) Filtrage automatique des phrases a longues dependances
        (pour identifier les erreurs potentielles du modele)
+    4) Lecture directe d'un fichier CoNLL-U pre-compute  (sans Stanza)
 
   Usage :
     # Inspecter un texte libre
@@ -27,6 +25,17 @@
 
     # Lancer le serveur displacy interactif
     python inspect_corpus.py --text "..." --serve
+
+    # Visualiser un fichier CoNLL-U pre-compute (ex: resultats HopsParser)
+    python inspect_corpus.py --conllu results/SMS/fsmb/output_SMS.conllu
+
+    # Visualiser uniquement les phrases 5 a 10 d'un CoNLL-U
+    python inspect_corpus.py --conllu results/SMS/gsd/output_SMS.conllu \
+           --sent-range 5-10
+
+    # Serveur interactif a partir d'un CoNLL-U
+    python inspect_corpus.py --conllu results/SMS/stanza/output_SMS.conllu \
+           --sent-range 1-3 --serve
 ==========================================================================
 """
 
@@ -114,7 +123,7 @@ def render_serve(doc, port: int = 5000):
     displacy.serve(doc, style="dep", port=port, options=opts)
 
 
-# ── reading corpus ───────────────────────────────────────────────────
+# ── reading corpus (CSV) ─────────────────────────────────────────────
 
 def read_texts_from_csv(
     csv_path: str,
@@ -161,6 +170,147 @@ def read_texts_from_csv(
         texts = texts.iloc[start:end]
 
     return [(i + 1, t) for i, t in zip(texts.index, texts)]
+
+
+# ── reading CoNLL-U ───────────────────────────────────────────────────
+
+# Known non-UD tagsets (POS or deprel) — display a warning but still render
+_NON_UD_DEPRELS = {
+    "suj", "a_obj", "obj.p", "obj.cpl", "aff", "ponct", "mod",
+    "seg", "dep.coord", "p_obj", "obj.cpl",
+}
+
+
+def _parse_sent_range(sent_range: str | None) -> tuple[int, int]:
+    """Return (start_0indexed, end_exclusive) from a '1-10' style string."""
+    if not sent_range:
+        return (0, 10 ** 9)
+    parts = sent_range.split("-")
+    start = int(parts[0]) - 1
+    end = int(parts[1]) if len(parts) > 1 else start + 1
+    return (start, end)
+
+
+def read_conllu(
+    conllu_path: str,
+    sent_range: str | None = None,
+) -> list[dict]:
+    """Parse a CoNLL-U file into a list of sentence dicts.
+
+    Each sentence dict has:
+      - 'text'   : str   (from # text = ... comment, or reconstructed)
+      - 'tokens' : list of token dicts with keys
+                   id, form, lemma, upos, head, deprel
+      - 'idx'    : int   (1-indexed sentence number in the file)
+      - 'has_deps' : bool (False if all head/deprel fields are '_')
+      - 'non_ud_rels' : set of deprel values not in UD
+
+    Parameters
+    ----------
+    conllu_path : str
+        Path to the CoNLL-U file.
+    sent_range : str, optional
+        Sentence range '5-10' (1-indexed, inclusive).
+
+    Returns
+    -------
+    list[dict]
+    """
+    start, end = _parse_sent_range(sent_range)
+    sentences = []
+    current_tokens: list[dict] = []
+    current_meta: dict = {}
+    sent_global_idx = 0  # 0-indexed counter across file
+
+    def _flush():
+        nonlocal sent_global_idx
+        if not current_tokens:
+            return
+        sent_global_idx += 1
+        # Apply range filter (1-indexed)
+        if not (start <= sent_global_idx - 1 < end):
+            current_tokens.clear()
+            current_meta.clear()
+            return
+
+        text = current_meta.get("text", " ".join(t["form"] for t in current_tokens))
+        has_deps = any(
+            t["head"] != "_" and t["deprel"] != "_"
+            for t in current_tokens
+        )
+        non_ud = {
+            t["deprel"] for t in current_tokens
+            if t["deprel"] in _NON_UD_DEPRELS
+        }
+        sentences.append({
+            "text": text,
+            "tokens": list(current_tokens),
+            "idx": sent_global_idx,
+            "has_deps": has_deps,
+            "non_ud_rels": non_ud,
+        })
+        current_tokens.clear()
+        current_meta.clear()
+
+    with open(conllu_path, encoding="utf-8") as fh:
+        for raw_line in fh:
+            line = raw_line.rstrip("\n")
+            if not line:
+                _flush()
+                continue
+            if line.startswith("#"):
+                # Parse metadata comments
+                if line.startswith("# text") and "=" in line:
+                    current_meta["text"] = line.split("=", 1)[1].strip()
+                continue
+            parts = line.split("\t")
+            if len(parts) < 10:
+                continue  # malformed line
+            token_id = parts[0]
+            # Skip multi-word tokens (e.g. "1-2") and empty nodes ("1.1")
+            if "-" in token_id or "." in token_id:
+                continue
+            current_tokens.append({
+                "id"     : int(token_id),
+                "form"   : parts[1],
+                "lemma"  : parts[2],
+                "upos"   : parts[3],
+                "head"   : parts[6],
+                "deprel" : parts[7],
+            })
+    _flush()  # last sentence if file does not end with blank line
+    return sentences
+
+
+def conllu_to_displacy_data(sentence: dict) -> dict:
+    """Convert a CoNLL-U sentence dict to displacy manual rendering data.
+
+    displacy 'manual' format:
+      {
+        'words'  : [{'text': ..., 'tag': ...}, ...],
+        'arcs'   : [{'start': int, 'end': int, 'label': str, 'dir': str}, ...],
+      }
+    Indices are 0-based in displacy.
+    """
+    tokens = sentence["tokens"]
+    words = [
+        {"text": t["form"], "tag": t["upos"] if t["upos"] != "_" else ""}
+        for t in tokens
+    ]
+    arcs = []
+    for t in tokens:
+        if t["head"] == "_" or t["deprel"] == "_":
+            continue
+        head_id = int(t["head"])
+        if head_id == 0:
+            continue  # root arc — displacy handles root separately
+        dep_idx  = t["id"] - 1   # 0-based
+        head_idx = head_id - 1   # 0-based
+        if dep_idx < head_idx:
+            arcs.append({"start": dep_idx,  "end": head_idx, "label": t["deprel"], "dir": "right"})
+        else:
+            arcs.append({"start": head_idx, "end": dep_idx,  "label": t["deprel"], "dir": "left"})
+    return {"words": words, "arcs": arcs}
 
 
 # ── main modes ────────────────────────────────────────────────────────
@@ -228,7 +378,7 @@ def mode_csv(
     os.makedirs(output_dir, exist_ok=True)
 
     for i, (idx, text) in enumerate(texts):
-        print(f"\n  ── Texte {idx} ──")
+        print(f"\n  -- Texte {idx} --")
         doc = nlp(text)
         stats = analyse_doc(doc)
 
@@ -258,11 +408,121 @@ def mode_csv(
     print(f"\n  {len(texts)} fichier(s) HTML genere(s) dans {output_dir}/")
 
 
+# ── CoNLL-U mode ─────────────────────────────────────────────────────
+
+def _check_conllu_compatibility(conllu_path: str, sentences: list[dict]) -> None:
+    """Print compatibility warnings for a CoNLL-U file."""
+    path_lower = conllu_path.lower()
+
+    # Detect input files (no annotations)
+    no_deps = [s for s in sentences if not s["has_deps"]]
+    if no_deps:
+        print(
+            f"\n  [!] ATTENTION : {len(no_deps)}/{len(sentences)} phrase(s) "
+            "n'ont PAS d'annotations de dependance (champs HEAD/DEPREL = '_').\n"
+            "     => Ce fichier est probablement un fichier INPUT (avant parsing).\n"
+            "     => Utilisez le fichier 'output_*.conllu' correspondant."
+        )
+
+    # Detect non-UD tagset (e.g. fsmb / FTB annotation)
+    all_non_ud = set()
+    for s in sentences:
+        all_non_ud |= s["non_ud_rels"]
+    if all_non_ud:
+        print(
+            f"\n  [i] TAGSET non-UD detecte : relations {sorted(all_non_ud)}.\n"
+            "     Ce fichier utilise probablement l'annotation FTB/SEM (modele fsmb).\n"
+            "     Les arbres seront affiches correctement mais les labels\n"
+            "     differeront des conventions Universal Dependencies (UD)."
+        )
+
+    if not no_deps and not all_non_ud:
+        print("\n  [OK] Fichier CoNLL-U valide et compatible UD.")
+
+
+def mode_conllu(
+    conllu_path: str,
+    sent_range: str | None,
+    output_dir: str,
+    serve: bool,
+) -> None:
+    """Visualise pre-computed CoNLL-U dependency trees via displacy."""
+    from spacy import displacy
+
+    print(f"\n  Lecture de : {conllu_path}")
+    sentences = read_conllu(conllu_path, sent_range)
+
+    if not sentences:
+        print("  ! Aucune phrase trouvee (verifier --sent-range ou le fichier).")
+        return
+
+    print(f"  {len(sentences)} phrase(s) chargee(s).")
+    _check_conllu_compatibility(conllu_path, sentences)
+
+    opts = {"distance": 100, "compact": True, "bg": "#1a1a2e", "color": "#eee"}
+
+    if serve:
+        # displacy.serve expects spaCy Doc objects; use manual mode instead
+        manual_data = [conllu_to_displacy_data(s) for s in sentences]
+        print(f"\n  Serveur displacy (manuel) sur http://localhost:5000")
+        print("  Ctrl+C pour arreter.\n")
+        displacy.serve(
+            manual_data,
+            style="dep",
+            manual=True,
+            options={"distance": 100, "compact": True},
+        )
+        return
+
+    os.makedirs(output_dir, exist_ok=True)
+    for s in sentences:
+        stats = analyse_doc_from_tokens(s["tokens"])
+        print(f"\n  -- Phrase {s['idx']} : {s['text'][:80]}")
+        print(f"     Tokens : {stats['n_tokens']} | "
+              f"Dep. max : {stats['max_dep']} | "
+              f"Dep. moy : {stats['mean_dep']:.2f}")
+        if not s["has_deps"]:
+            print("     [SKIP] Pas d'annotations de dependance.")
+            continue
+
+        data = conllu_to_displacy_data(s)
+        html = displacy.render(
+            data,
+            style="dep",
+            page=True,
+            manual=True,
+            options=opts,
+        )
+        fname = f"conllu_{s['idx']:04d}.html"
+        fpath = os.path.join(output_dir, fname)
+        with open(fpath, "w", encoding="utf-8") as fh:
+            fh.write(html)
+        print(f"     -> {fpath}")
+
+    print(f"\n  {len(sentences)} fichier(s) HTML genere(s) dans {output_dir}/")
+
+
+def analyse_doc_from_tokens(tokens: list[dict]) -> dict:
+    """Compute dep distance stats from CoNLL-U token dicts."""
+    distances = []
+    for t in tokens:
+        if t["head"] != "_" and int(t["head"]) != 0:
+            dist = abs(t["id"] - int(t["head"]))
+            distances.append(dist)
+    if not distances:
+        return {"max_dep": 0, "mean_dep": 0.0, "n_tokens": len(tokens)}
+    return {
+        "max_dep" : max(distances),
+        "mean_dep": sum(distances) / len(distances),
+        "n_tokens": len(tokens),
+    }
+
+
 # ── CLI ───────────────────────────────────────────────────────────────
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="Inspection manuelle du corpus avec spacy_stanza.",
+        description="Inspection manuelle du corpus (spacy_stanza ou CoNLL-U).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Exemples :\n"
@@ -272,6 +532,10 @@ def parse_args():
             "  python inspect_corpus.py --csv Corpus/philosophie.csv "
             "--column Texte --top-deps 15\n"
             "  python inspect_corpus.py --text \"...\" --serve\n"
+            "  python inspect_corpus.py "
+            "--conllu results/SMS/fsmb/output_SMS.conllu --sent-range 1-5\n"
+            "  python inspect_corpus.py "
+            "--conllu results/SMS/gsd/output_SMS.conllu --serve\n"
         ),
     )
     src = p.add_mutually_exclusive_group(required=True)
@@ -283,19 +547,31 @@ def parse_args():
         "--csv",
         help="Fichier CSV de corpus a inspecter.",
     )
+    src.add_argument(
+        "--conllu",
+        help="Fichier CoNLL-U pre-compute a visualiser (sans re-parser via Stanza).",
+    )
     p.add_argument(
         "--column", "-c",
         default="Texte",
-        help="Nom de la colonne contenant le texte (defaut : Texte).",
+        help="Nom de la colonne contenant le texte (defaut : Texte). "
+             "Utilisé uniquement avec --csv.",
     )
     p.add_argument(
         "--rows",
-        help="Plage de lignes a inspecter, ex. '1-10' (1-indexed, inclusif).",
+        help="Plage de lignes CSV a inspecter, ex. '1-10'. "
+             "Utilisé uniquement avec --csv.",
+    )
+    p.add_argument(
+        "--sent-range",
+        help="Plage de phrases CoNLL-U a inspecter, ex. '1-10'. "
+             "Utilisé uniquement avec --conllu.",
     )
     p.add_argument(
         "--top-deps",
         type=int,
-        help="Afficher les N textes avec les plus longues dependances.",
+        help="Afficher les N textes avec les plus longues dependances. "
+             "Utilisé uniquement avec --csv.",
     )
     p.add_argument(
         "--output-dir", "-o",
@@ -318,23 +594,34 @@ def main():
     output_dir = args.output_dir or str(_REPO_ROOT / "results" / "inspection")
 
     print(f"\n{BANNER}")
-    print("  INSPECTION MANUELLE DU CORPUS (spacy_stanza)")
-    print(BANNER)
 
-    nlp = load_nlp()
-
-    if args.text:
-        mode_text(nlp, args.text, output_dir, args.serve)
-    else:
-        mode_csv(
-            nlp,
-            args.csv,
-            args.column,
-            args.rows,
-            args.top_deps,
+    if args.conllu:
+        # ── CoNLL-U mode: no Stanza required ──────────────────────────
+        print("  INSPECTION CoNLL-U (affichage sans re-parsing)")
+        print(BANNER)
+        mode_conllu(
+            args.conllu,
+            args.sent_range,
             output_dir,
             args.serve,
         )
+    else:
+        # ── Stanza mode ───────────────────────────────────────────────
+        print("  INSPECTION MANUELLE DU CORPUS (spacy_stanza)")
+        print(BANNER)
+        nlp = load_nlp()
+        if args.text:
+            mode_text(nlp, args.text, output_dir, args.serve)
+        else:
+            mode_csv(
+                nlp,
+                args.csv,
+                args.column,
+                args.rows,
+                args.top_deps,
+                output_dir,
+                args.serve,
+            )
 
     print(f"\n{BANNER}\n")
 
