@@ -1,0 +1,37 @@
+modele,affinite,feature,sms_n,sms_mean,sms_std,philo_n,philo_mean,philo_std,delta,direction
+gsd,Philosophie / ecrit formel,distance_dependance_moy,3000,2.3666,0.8441,1059,3.5915,0.7305,1.2249,Philo > SMS
+gsd,Philosophie / ecrit formel,distance_dependance_max,3000,8.2227,7.9112,1059,30.0312,19.0982,21.8085,Philo > SMS
+gsd,Philosophie / ecrit formel,distance_dependance_var,3000,5.5671,9.2278,1059,31.6966,27.9202,26.1295,Philo > SMS
+gsd,Philosophie / ecrit formel,profondeur_arbre_moy,3000,3.3265,1.1458,1059,6.9207,2.1124,3.5942,Philo > SMS
+gsd,Philosophie / ecrit formel,profondeur_arbre_max,3000,3.7683,1.4097,1059,6.9348,2.1113,3.1665,Philo > SMS
+gsd,Philosophie / ecrit formel,nb_dependances_moy_phrase,3000,8.5734,7.1243,1059,36.9839,20.15,28.4106,Philo > SMS
+fsmb,SMS / oral,distance_dependance_moy,3000,2.3561,1.0068,1059,3.8041,1.631,1.448,Philo > SMS
+fsmb,SMS / oral,distance_dependance_max,3000,8.562,8.3818,1059,30.8149,18.7902,22.2529,Philo > SMS
+fsmb,SMS / oral,distance_dependance_var,3000,7.3015,15.9644,1059,44.0867,61.5588,36.7852,Philo > SMS
+fsmb,SMS / oral,profondeur_arbre_moy,3000,3.6915,1.5346,1059,8.5633,2.2673,4.8718,Philo > SMS
+fsmb,SMS / oral,profondeur_arbre_max,3000,4.2857,1.9294,1059,8.5817,2.2685,4.296,Philo > SMS
+fsmb,SMS / oral,nb_dependances_moy_phrase,3000,8.5734,7.1243,1059,36.9839,20.15,28.4106,Philo > SMS
+sequoia,Philosophie / ecrit formel,distance_dependance_moy,3000,2.4199,0.9083,1059,3.7654,0.885,1.3455,Philo > SMS
+sequoia,Philosophie / ecrit formel,distance_dependance_max,3000,8.198,7.858,1059,29.9245,18.8947,21.7265,Philo > SMS
+sequoia,Philosophie / ecrit formel,distance_dependance_var,3000,5.7417,9.8967,1059,33.9985,34.9913,28.2568,Philo > SMS
+sequoia,Philosophie / ecrit formel,profondeur_arbre_moy,3000,3.2751,1.1328,1059,6.7517,1.9527,3.4766,Philo > SMS
+sequoia,Philosophie / ecrit formel,profondeur_arbre_max,3000,3.7007,1.3829,1059,6.7639,1.9505,3.0633,Philo > SMS
+sequoia,Philosophie / ecrit formel,nb_dependances_moy_phrase,3000,8.5734,7.1243,1059,36.9839,20.15,28.4106,Philo > SMS
+rhapsodie,SMS / oral,distance_dependance_moy,3000,2.2,0.7584,1059,3.8217,1.117,1.6217,Philo > SMS
+rhapsodie,SMS / oral,distance_dependance_max,3000,7.667,7.6363,1059,30.0151,19.0597,22.3481,Philo > SMS
+rhapsodie,SMS / oral,distance_dependance_var,3000,4.473,7.63,1059,34.6008,38.6483,30.1278,Philo > SMS
+rhapsodie,SMS / oral,profondeur_arbre_moy,3000,3.4913,1.2573,1059,6.738,1.9158,3.2467,Philo > SMS
+rhapsodie,SMS / oral,profondeur_arbre_max,3000,3.962,1.5295,1059,6.7479,1.9106,2.7859,Philo > SMS
+rhapsodie,SMS / oral,nb_dependances_moy_phrase,3000,8.5734,7.1243,1059,36.9839,20.15,28.4106,Philo > SMS
+zenodo-spoken,SMS / oral,distance_dependance_moy,3000,2.2724,0.7797,1059,3.6727,0.9027,1.4002,Philo > SMS
+zenodo-spoken,SMS / oral,distance_dependance_max,3000,8.092,8.0786,1059,30.0038,19.131,21.9118,Philo > SMS
+zenodo-spoken,SMS / oral,distance_dependance_var,3000,4.9973,7.9749,1059,32.7151,32.4783,27.7178,Philo > SMS
+zenodo-spoken,SMS / oral,profondeur_arbre_moy,3000,3.4376,1.2669,1059,7.0529,2.0021,3.6152,Philo > SMS
+zenodo-spoken,SMS / oral,profondeur_arbre_max,3000,3.9033,1.5419,1059,7.0652,1.9982,3.1618,Philo > SMS
+zenodo-spoken,SMS / oral,nb_dependances_moy_phrase,3000,8.5734,7.1243,1059,36.9839,20.15,28.4106,Philo > SMS
+stanza,generaliste,distance_dependance_moy,3000,2.2225,0.8006,1059,3.3935,0.6478,1.171,Philo > SMS
+stanza,generaliste,distance_dependance_max,3000,7.5093,7.2527,1059,26.8338,16.3985,19.3245,Philo > SMS
+stanza,generaliste,distance_dependance_var,3000,4.744,7.9434,1059,26.8297,22.0268,22.0857,Philo > SMS
+stanza,generaliste,profondeur_arbre_moy,3000,3.2126,1.1778,1059,6.7222,2.1473,3.5096,Philo > SMS
+stanza,generaliste,profondeur_arbre_max,3000,3.6707,1.4907,1059,6.8196,2.1682,3.149,Philo > SMS
+stanza,generaliste,nb_dependances_moy_phrase,3000,7.8126,6.1587,1059,32.6832,17.1492,24.8706,Philo > SMS

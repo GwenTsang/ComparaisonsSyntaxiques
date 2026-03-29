@@ -1,0 +1,83 @@
+COMPARAISON DES DISTANCES SYNTAXIQUES : SMS vs PHILOSOPHIE
+============================================================
+
+Modeles utilises :
+  - gsd                  affinite : Philosophie / ecrit formel
+  - fsmb                 affinite : SMS / oral
+  - sequoia              affinite : Philosophie / ecrit formel
+  - rhapsodie            affinite : SMS / oral
+  - zenodo-spoken        affinite : SMS / oral
+  - stanza               affinite : generaliste
+
+
+--- DETAIL PAR MODELE ---
+
+
+  Modele             Feature                      SMS moy  Philo moy      Delta          Direction
+  -----------------------------------------------------------------------------------------------
+  gsd                Dist. dep. moyenne              2.37       3.59      +1.22        Philo > SMS
+  gsd                Dist. dep. max                  8.22      30.03     +21.81        Philo > SMS
+  gsd                Dist. dep. variance             5.57      31.70     +26.13        Philo > SMS
+  gsd                Prof. arbre moyenne             3.33       6.92      +3.59        Philo > SMS
+  gsd                Prof. arbre max                 3.77       6.93      +3.17        Philo > SMS
+  gsd                Nb dep. moy/phrase              8.57      36.98     +28.41        Philo > SMS
+
+  fsmb               Dist. dep. moyenne              2.36       3.80      +1.45        Philo > SMS
+  fsmb               Dist. dep. max                  8.56      30.81     +22.25        Philo > SMS
+  fsmb               Dist. dep. variance             7.30      44.09     +36.79        Philo > SMS
+  fsmb               Prof. arbre moyenne             3.69       8.56      +4.87        Philo > SMS
+  fsmb               Prof. arbre max                 4.29       8.58      +4.30        Philo > SMS
+  fsmb               Nb dep. moy/phrase              8.57      36.98     +28.41        Philo > SMS
+
+  sequoia            Dist. dep. moyenne              2.42       3.77      +1.35        Philo > SMS
+  sequoia            Dist. dep. max                  8.20      29.92     +21.73        Philo > SMS
+  sequoia            Dist. dep. variance             5.74      34.00     +28.26        Philo > SMS
+  sequoia            Prof. arbre moyenne             3.28       6.75      +3.48        Philo > SMS
+  sequoia            Prof. arbre max                 3.70       6.76      +3.06        Philo > SMS
+  sequoia            Nb dep. moy/phrase              8.57      36.98     +28.41        Philo > SMS
+
+  rhapsodie          Dist. dep. moyenne              2.20       3.82      +1.62        Philo > SMS
+  rhapsodie          Dist. dep. max                  7.67      30.02     +22.35        Philo > SMS
+  rhapsodie          Dist. dep. variance             4.47      34.60     +30.13        Philo > SMS
+  rhapsodie          Prof. arbre moyenne             3.49       6.74      +3.25        Philo > SMS
+  rhapsodie          Prof. arbre max                 3.96       6.75      +2.79        Philo > SMS
+  rhapsodie          Nb dep. moy/phrase              8.57      36.98     +28.41        Philo > SMS
+
+  zenodo-spoken      Dist. dep. moyenne              2.27       3.67      +1.40        Philo > SMS
+  zenodo-spoken      Dist. dep. max                  8.09      30.00     +21.91        Philo > SMS
+  zenodo-spoken      Dist. dep. variance             5.00      32.72     +27.72        Philo > SMS
+  zenodo-spoken      Prof. arbre moyenne             3.44       7.05      +3.62        Philo > SMS
+  zenodo-spoken      Prof. arbre max                 3.90       7.07      +3.16        Philo > SMS
+  zenodo-spoken      Nb dep. moy/phrase              8.57      36.98     +28.41        Philo > SMS
+
+  stanza             Dist. dep. moyenne              2.22       3.39      +1.17        Philo > SMS
+  stanza             Dist. dep. max                  7.51      26.83     +19.32        Philo > SMS
+  stanza             Dist. dep. variance             4.74      26.83     +22.09        Philo > SMS
+  stanza             Prof. arbre moyenne             3.21       6.72      +3.51        Philo > SMS
+  stanza             Prof. arbre max                 3.67       6.82      +3.15        Philo > SMS
+  stanza             Nb dep. moy/phrase              7.81      32.68     +24.87        Philo > SMS
+
+
+
+--- MOYENNES GLOBALES ---
+
+Feature                          SMS      Philo      Delta          Direction
+----------------------------------------------------------------------------
+Dist. dep. moyenne            2.3063     3.6748    +1.3685  Philo > SMS
+Dist. dep. max                8.0418    29.6039   +21.5620  Philo > SMS
+Dist. dep. variance           5.4708    33.9879   +28.5171  Philo > SMS
+Prof. arbre moyenne           3.4058     7.1248    +3.7190  Philo > SMS
+Prof. arbre max               3.8818     7.1522    +3.2704  Philo > SMS
+Nb dep. moy/phrase            8.4466    36.2672   +27.8206  Philo > SMS
+
+
+--- INTERPRETATION ---
+
+Rappel : une distance de dependance plus elevee indique des
+arcs syntaxiques plus longs, typiquement associes a des
+structures plus complexes (enchassements, relatives, etc.).
+
+→ Le corpus Philosophie presente des distances de
+  dependance moyennes plus elevees (delta = +1.3685),
+  ce qui suggere des structures syntaxiques legerement
+  plus complexes.

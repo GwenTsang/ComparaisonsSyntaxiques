@@ -5,7 +5,7 @@
   Orchestrateur multi-modeles / multi-corpus
 
   Lance tous les modeles de parsing (HopsParser + Stanza) sur les deux
-  corpus (SMS et Philosophie), puis compare les proprietes syntaxiques.
+  corpus (SMS et Philosophie), puis execute les analyses syntaxiques.
 
   Usage :
     python orchestrator.py
@@ -16,7 +16,6 @@
 """
 
 import argparse
-import csv
 import os
 import pathlib
 import subprocess
@@ -38,16 +37,6 @@ HOPS_MODELS = ["gsd", "fsmb", "sequoia", "rhapsodie", "zenodo-spoken"]
 # All models including Stanza
 ALL_MODELS = HOPS_MODELS + ["stanza"]
 
-# Expected affinities (for the final report)
-MODEL_AFFINITY = {
-    "fsmb":           "SMS / oral",
-    "rhapsodie":      "SMS / oral",
-    "zenodo-spoken":  "SMS / oral",
-    "gsd":            "Philosophie / ecrit formel",
-    "sequoia":        "Philosophie / ecrit formel",
-    "stanza":         "generaliste",
-}
-
 CORPORA = {
     "SMS": {
         "csv": str(_REPO_ROOT / "Corpus" / "1000_SMS_transcodage.csv"),
@@ -58,32 +47,6 @@ CORPORA = {
         "columns": ["Texte"],
     },
 }
-
-# Syntactic structure features to compare
-STRUCTURE_FEATURES = [
-    "subordonnees_qui",
-    "subordonnees_que",
-    "subordonnees_prep_lequel",
-    "subordonnees_dont",
-    "completives",
-    "hypothetiques",
-    "gerondif",
-    "incises",
-    "propositions_coordonnees",
-]
-
-# Dependency features
-DEP_FEATURES = [
-    "profondeur_arbre_max",
-    "profondeur_arbre_moy",
-    "distance_dependance_max",
-    "distance_dependance_moy",
-    "distance_dependance_var",
-    "nb_dependances_moy_phrase",
-    "nb_dependances_var_phrase",
-    "nb_phrases",
-    "nb_tokens",
-]
 
 
 def section(title: str):
@@ -269,218 +232,6 @@ def step_accord(models: list[str], output_dir: str):
         )
 
 
-# ════════════════════════════════════════════════════════════════════════
-# ETAPE 6 : COMPARAISON STATISTIQUE SMS vs PHILOSOPHIE
-# ════════════════════════════════════════════════════════════════════════
-def step_compare(models: list[str], output_dir: str):
-    section("ETAPE 6 : COMPARAISON STATISTIQUE SMS vs PHILOSOPHIE")
-
-    try:
-        import numpy as np
-        from scipy import stats as sp_stats
-    except ImportError:
-        print("  ! scipy non installe, comparaison statistique impossible.")
-        return
-
-    import pandas as pd
-
-    compare_dir = os.path.join(output_dir, "comparaison_corpora")
-    os.makedirs(compare_dir, exist_ok=True)
-
-    # ── helpers ────────────────────────────────────────────────────────
-
-    def _load_feature_values(
-        corpus_name: str,
-        features: list[str],
-        csv_filename: str,
-        col_prefix: str = "",
-    ) -> dict[str, list[float]]:
-        """Load feature values across all models for a given corpus.
-
-        Parameters
-        ----------
-        corpus_name : str
-            "SMS" or "Philosophie".
-        features : list[str]
-            Feature names to look up.
-        csv_filename : str
-            Name of the CSV inside each model directory
-            (e.g. "structures_syntaxiques.csv" or "resultats_par_sms.csv").
-        col_prefix : str
-            Prefix prepended to each feature name to form the column name
-            (e.g. "nombre_" for structure features, "" for dep features).
-        """
-        all_vals: dict[str, list[float]] = {feat: [] for feat in features}
-        for model_name in models:
-            csv_path = os.path.join(
-                output_dir, corpus_name, model_name, csv_filename,
-            )
-            if not os.path.isfile(csv_path):
-                continue
-            try:
-                df = pd.read_csv(csv_path)
-                for feat in features:
-                    col = f"{col_prefix}{feat}"
-                    if col in df.columns:
-                        vals = pd.to_numeric(df[col], errors="coerce") \
-                                 .dropna().tolist()
-                        all_vals[feat].extend(vals)
-            except Exception as e:
-                print(f"  ! Erreur lecture {csv_path}: {e}")
-        return all_vals
-
-    def _run_mann_whitney(
-        sms_data: dict[str, list[float]],
-        philo_data: dict[str, list[float]],
-        features: list[str],
-        group_label: str,
-    ) -> list[dict]:
-        """Print & return Mann-Whitney U results for *features*.
-
-        Parameters
-        ----------
-        group_label : str
-            Human-readable label printed as a sub-header
-            (e.g. "Structure features" or "Dependency features").
-        """
-        print(f"\n  ── {group_label} ──")
-        print(f"  {'Feature':<35} {'SMS moy':>10} {'Philo moy':>10} "
-              f"{'U stat':>10} {'p-value':>12} {'Signif':>8}")
-        print("  " + "-" * 90)
-
-        rows: list[dict] = []
-        for feat in features:
-            sms_vals = sms_data.get(feat, [])
-            philo_vals = philo_data.get(feat, [])
-
-            if len(sms_vals) < 5 or len(philo_vals) < 5:
-                print(f"  {feat:<35} {'N/A':>10} {'N/A':>10} "
-                      f"{'':>10} {'':>12} {'trop peu':>8}")
-                continue
-
-            sms_mean = float(np.mean(sms_vals))
-            philo_mean = float(np.mean(philo_vals))
-
-            try:
-                u_stat, p_value = sp_stats.mannwhitneyu(
-                    sms_vals, philo_vals, alternative="two-sided",
-                )
-            except ValueError:
-                u_stat, p_value = 0.0, 1.0
-
-            # Effect size (rank-biserial correlation)
-            n1, n2 = len(sms_vals), len(philo_vals)
-            effect_size = 1 - (2 * u_stat) / (n1 * n2) if n1 * n2 > 0 else 0.0
-
-            sig = ("***" if p_value < 0.001
-                   else "**" if p_value < 0.01
-                   else "*" if p_value < 0.05
-                   else "")
-
-            print(f"  {feat:<35} {sms_mean:>10.2f} {philo_mean:>10.2f} "
-                  f"{u_stat:>10.0f} {p_value:>12.2e} {sig:>8}")
-
-            rows.append({
-                "feature": feat,
-                "group": group_label,
-                "sms_n": len(sms_vals),
-                "sms_mean": round(sms_mean, 4),
-                "sms_std": round(float(np.std(sms_vals)), 4),
-                "philo_n": len(philo_vals),
-                "philo_mean": round(philo_mean, 4),
-                "philo_std": round(float(np.std(philo_vals)), 4),
-                "mann_whitney_U": round(u_stat, 2),
-                "p_value": p_value,
-                "effect_size": round(effect_size, 4),
-                "significatif": sig,
-            })
-        return rows
-
-    # ── load data ─────────────────────────────────────────────────────
-
-    # 1) Structure features  (from structures_syntaxiques.csv)
-    sms_struct = _load_feature_values(
-        "SMS", STRUCTURE_FEATURES,
-        csv_filename="structures_syntaxiques.csv",
-        col_prefix="nombre_",
-    )
-    philo_struct = _load_feature_values(
-        "Philosophie", STRUCTURE_FEATURES,
-        csv_filename="structures_syntaxiques.csv",
-        col_prefix="nombre_",
-    )
-
-    # 2) Dependency features  (from resultats_par_sms.csv)
-    sms_dep = _load_feature_values(
-        "SMS", DEP_FEATURES,
-        csv_filename="resultats_par_sms.csv",
-        col_prefix="",
-    )
-    philo_dep = _load_feature_values(
-        "Philosophie", DEP_FEATURES,
-        csv_filename="resultats_par_sms.csv",
-        col_prefix="",
-    )
-
-    # ── statistical tests ─────────────────────────────────────────────
-
-    rows: list[dict] = []
-
-    rows.extend(_run_mann_whitney(
-        sms_struct, philo_struct, STRUCTURE_FEATURES,
-        group_label="Structures syntaxiques",
-    ))
-    rows.extend(_run_mann_whitney(
-        sms_dep, philo_dep, DEP_FEATURES,
-        group_label="Metriques de dependance",
-    ))
-
-    # ── export CSV ────────────────────────────────────────────────────
-
-    if rows:
-        csv_out = os.path.join(compare_dir, "comparaison_syntaxique.csv")
-        fieldnames = list(rows[0].keys())
-        with open(csv_out, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(rows)
-        print(f"\n  -> {csv_out}")
-
-    # ── human-readable summary ────────────────────────────────────────
-
-    summary_path = os.path.join(compare_dir, "resume_comparaison.txt")
-    with open(summary_path, "w", encoding="utf-8") as f:
-        f.write("COMPARAISON STATISTIQUE : SMS vs PHILOSOPHIE\n")
-        f.write("=" * 60 + "\n\n")
-
-        f.write("Modeles utilises :\n")
-        for m in models:
-            affinity = MODEL_AFFINITY.get(m, "?")
-            f.write(f"  - {m:<20} affinite : {affinity}\n")
-
-        f.write(f"\nFeatures significativement differentes (p < 0.05) :\n")
-        f.write("-" * 60 + "\n")
-
-        significant = [r for r in rows if r["p_value"] < 0.05]
-        if significant:
-            significant.sort(key=lambda r: r["p_value"])
-            for r in significant:
-                direction = ("SMS > Philo" if r["sms_mean"] > r["philo_mean"]
-                             else "Philo > SMS")
-                f.write(
-                    f"  [{r['group']}] {r['feature']:<30} p={r['p_value']:.2e}  "
-                    f"effect={r['effect_size']:.3f}  ({direction})\n"
-                )
-        else:
-            f.write("  Aucune feature significativement differente.\n")
-
-        f.write(f"\nFeatures NON significatives (p >= 0.05) :\n")
-        f.write("-" * 60 + "\n")
-        non_sig = [r for r in rows if r["p_value"] >= 0.05]
-        for r in non_sig:
-            f.write(f"  [{r['group']}] {r['feature']:<30} p={r['p_value']:.2e}\n")
-
-    print(f"  -> {summary_path}")
 
 
 # ════════════════════════════════════════════════════════════════════════
@@ -561,9 +312,6 @@ def main():
     # Step 5: Inter-model agreement
     step_accord(models, output_dir)
 
-    # Step 6: Statistical comparison
-    step_compare(models, output_dir)
-
     # Final summary
     elapsed = time.time() - t0
     section("TERMINE")
@@ -577,7 +325,6 @@ def main():
             status = "OK" if os.path.isdir(d) else "manquant"
             print(f"      {model_name:<20} [{status}]")
     print(f"    accord_inter_modeles/")
-    print(f"    comparaison_corpora/")
     print(BANNER)
 
 
