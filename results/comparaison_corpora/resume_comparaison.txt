@@ -1,0 +1,17 @@
+COMPARAISON STATISTIQUE : SMS vs PHILOSOPHIE
+============================================================
+
+Modeles utilises :
+  - gsd                  affinite : Philosophie / ecrit formel
+  - fsmb                 affinite : SMS / oral
+  - sequoia              affinite : Philosophie / ecrit formel
+  - rhapsodie            affinite : SMS / oral
+  - zenodo-spoken        affinite : SMS / oral
+  - stanza               affinite : generaliste
+
+Features significativement differentes (p < 0.05) :
+------------------------------------------------------------
+  Aucune feature significativement differente.
+
+Features NON significatives (p >= 0.05) :
+------------------------------------------------------------
