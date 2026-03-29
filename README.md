@@ -1,4 +1,4 @@
-# HopsColab : Pipeline d'Analyse et de Comparaison Syntaxique
+# Pipeline d'Analyse et de Comparaison Syntaxique
 
 Ce petit projet vise à faire une analyse lexicométrique et syntaxique comparative de corpus de différents genres (SMS, Philosophie, Le Monde). 
 
