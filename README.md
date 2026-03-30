@@ -163,25 +163,13 @@ $$
 \Delta(m) = |\sigma_m - \sigma_{\mathrm{gov}(m)}|.
 $$
 
-Par exemple, si $m$ est le 2\textsuperscript{ème} mot et que son gouverneur est le 5\textsuperscript{ème}, alors :
+Par exemple, si $m$ est le 2ème mot que son gouverneur est le 5ème, alors :
 
 $$
 \Delta(m) = |5 - 2| = 3.
 $$
 
-Pour une phrase donnée, on considère l’ensemble des mots ayant un gouverneur :
-
-$$
-P = \{ m \mid m \text{ a un gouverneur} \}.
-$$
-
-La distance de dépendance moyenne est alors définie par :
-
-$$
-\mathrm{MDD} = \frac{1}{|P|} \sum_{m \in P} \Delta(m).
-$$
-
-Formellement :
+Pour une phrase donnée, on considère l’ensemble des mots ayant un gouverneur $P$ = { $m$ | $m$ a un gouverneur } . La distance de dépendance moyenne est donnée par :
 
 $$
 \text{Distance de Dépendance Moyenne} = \frac{1}{|P|} \sum_{m \in P} \Delta(m).
