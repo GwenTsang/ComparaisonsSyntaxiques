@@ -34,7 +34,6 @@ Après avoir consulté le code source des parsers proposés sur ce site [à ce l
 | `camembertav2-rhapsodie` | Français parlé annoté (oral linguistique structuré)                                            | [huggingface.co/almanach/camembertav2-base-rhapsodie](huggingface.co/almanach/camembertav2-base-rhapsodie) | [github.com/UniversalDependencies/UD_French-Rhapsodie](github.com/UniversalDependencies/UD_French-Rhapsodie) |
 | `spoken-french`          | Français oral (agrégat UD : ParisStories + Rhapsodie ; spontané + annoté)                      | [hopsparser.readthedocs.io/en/latest/models.html](hopsparser.readthedocs.io/en/latest/models.html) | (agrégat de corpus UD, dont Rhapsodie et ParisStories) |
 
-Pour pallier cela, nous avons utilisé certains parsers ayant été entraînés sur des corpus assez proches, par exemple [camembertav2-base-fsmb](https://huggingface.co/almanach/camembertav2-base-fsmb) qui a été entraîné sur le corpus FSMB (French Social Media Bank, cf. [Seddah (2012)](https://inria.hal.science/hal-00780895)).
 
 Le projet utilise deux pipelines principales :
 
@@ -65,12 +64,12 @@ HopsColab/
 ```
 
 
-## Pipeline 1 : Parsing et Extraction (Orchestrateur Multi-Modèles)
+## Pipeline 1 : Parsing et Extraction
 
-Située dans `ParsingScripts`, cette pipeline s'occupe de la transformation du texte en objets syntaxiques quantifiables. 
+Située dans `ParsingScripts`, cette pipeline s'occupe du parsing syntaxique. 
 Elle s'exécute via la commande `python ParsingScripts/orchestrator.py`.
 
-Elle se déroule en 5 étapes automatisées :
+Elle se déroule en 5 étapes :
 
 1. **Préparation des corpus (`prepare_corpus.py`)** : 
    Convertit les fichiers texte bruts (ex: les copies de philosophie dans `Corpus/Copies/`) en format CSV utilisable par les modèles (`Corpus/philosophie.csv`). Le corpus SMS est déjà formaté.
@@ -89,7 +88,7 @@ Elle se déroule en 5 étapes automatisées :
 
 ---
 
-## Pipeline 2 : Analyse Comparative 3-Way
+## Pipeline 2 : Analyse Comparative
 
 Située dans `AnalysisScripts`, cette pipeline prend les résultats générés par le parsing et les confronte avec un troisième corpus de référence ("Le Monde" via UD_FTB).
 Elle s'exécute via la commande `python AnalysisScripts/run_all_3way.py`.
@@ -118,13 +117,16 @@ Les rapports comparatifs (textuels et données CSV) sont exportés dans `results
 
 ### 1. Pré-requis et Installation
 
-Assurez-vous de disposer de Python 3.10+ et installez les dépendances :
+Assurez-vous de disposer de Python 3.10+ et faites un `cd` avec le chemin de ce repo. 
+
+Installez les dépendances :
+
 ```bash
 pip install -r requirements.txt
 pip install -e "."
 ```
 
-### 2. Lancement complet de l'orchestrateur de parsing
+### 2. Lancement de l'orchestrateur de parsing
 
 Cette étape s'exécute de préférence sur un GPU car elle charge et exécute 6 modèles d'apprentissage profond (1 modèle RoBERTa, 4 modèles DeBERTa et Stanza) sur des centaines de phrases combinées.
 
