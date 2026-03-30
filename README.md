@@ -1,12 +1,22 @@
-# Pipeline d'Analyse et de Comparaison Syntaxique
+# Analyses et comparaisons syntaxiques
 
-Nous proposons une analyse lexicométrique et syntaxique de corpus de trois différents genres très distincts : le genre SMS, le genre philosophique, et le genre journalistique.
+## Propriétés syntaxiques analysées
 
-Plus précisément :
+- mesure de la longueur moyenne d’une dépendance au sein d’une phrase,
+- mesure du nombre moyen de dépendances par phrase.
+- fréquences des subordonnées relatives (qui, que, dont, prép+lequel), complétives, hypothétiques, gérondif, incises, et propositions coordonnées. Inspiré de [ce script](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/blob/main/text_complexity/server/src/processor/syntaxe/structures_syntaxiques.py)
+
+## Corpus
+
+Trois corpus très distincts :
 
 * Un corpus de 13 dissertations de philosophie rédigées lors des concours du CAPES et de l’agrégation (provenant de [ce repository](https://github.com/GwenTsang/concours-de-philosophie)).
 * Un corpus de 1000 SMS dans trois versions : version brute, version transcrite par des étudiants et version transcrite par des chercheurs (téléchargé depuis [88milsms.huma-num.fr](http://88milsms.huma-num.fr/corpus_en.html)).
 * Un corpus d’articles du journal “Le Monde” déjà annoté en syntaxe de dépendances (téléchargeable depuis [UD_French-FTB](https://universaldependencies.org/treebanks/fr_ftb/) / [GitHub](https://github.com/UniversalDependencies/UD_French-FTB)).
+
+### Hypothèse testée
+
+Les SMS présentent des structures syntaxiques plus simples (distances plus courtes, moins de subordonnées, etc.) que les textes philosophiques ou journalistiques. La fréquence de certaines structures syntaxiques (subordonnées relatives, complétives, incises, etc.) est plus faible dans les SMS que dans les autres genres, et plus élevée dans les textes philosophiques et journalistiques.
 
 ### Préalables méthodologiques
 
