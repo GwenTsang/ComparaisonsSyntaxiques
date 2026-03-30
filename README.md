@@ -4,9 +4,9 @@
 
 - mesure de la longueur moyenne d’une dépendance au sein d’une phrase,
 - mesure du nombre moyen de dépendances par phrase.
-- fréquences des subordonnées relatives (qui, que, dont, prép+lequel), complétives, hypothétiques, gérondif, incises, et propositions coordonnées. Inspiré de [ce script](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/blob/main/text_complexity/server/src/processor/syntaxe/structures_syntaxiques.py)
+- fréquences des subordonnées relatives (qui, que, dont, prép+lequel), complétives, hypothétiques, gérondif, incises, et propositions coordonnées (inspiré de [ce script](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/blob/main/text_complexity/server/src/processor/syntaxe/structures_syntaxiques.py))
 
-La variable dépendante utilisée est la Distance de Dépendance Moyenne calculée au niveau des phrases (explication dans la section "détails" ci-dessous).
+Dans nos analyses, la variable dépendante principale est la Distance de Dépendance Moyenne (explication dans la section "détails" ci-dessous).
 
 ## Corpus
 
@@ -24,7 +24,7 @@ Les SMS présentent des structures syntaxiques plus simples (distances plus cour
 
 Nous nous sommes aperçus que les parsers du site [Texttokids](https://texttokids.ortolang.fr) ne fonctionnaient pas extrêmement bien sur le langage SMS.
 
-après avoir consulté le code source des parsers proposés sur ce site [à ce lien](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/tree/main/text_complexity/server/src/processor/syntaxe), on s'en est inspiré pour reproduire les deux mêmes tâches (complexité dans les dépendances syntaxiques et complexité dans les structures syntaxiques), mais avec d'autres modèles :
+Après avoir consulté le code source des parsers proposés sur ce site [à ce lien](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/tree/main/text_complexity/server/src/processor/syntaxe), on s'en est inspiré pour reproduire les deux mêmes tâches (complexité dans les dépendances syntaxiques et complexité dans les structures syntaxiques), mais avec d'autres modèles. Ci-dessous la liste des modèles utilisés qui utilisent [Hopsparser](https://github.com/hopsparser/hopsparser) :
 
 | Nom                      | Genre textuel du corpus d’entraînement                                                         | Lien modèle                                                                 | Lien corpus                                                                                   |
 | ------------------------ | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -40,7 +40,7 @@ Le projet utilise deux pipelines principales :
 
 1. **Un orchestrateur de parsing multi-modèles** (`ParsingScripts/orchestrator.py`) qui transforme les textes bruts en représentations sous forme d'arbres de dépendances.
 
-2. **Un orchestrateur d'analyse comparative 3-way** (`AnalysisScripts/run_all_3way.py`) qui permet de mesurer et quantifier la complexité syntaxique entre différents genres textuels.
+2. **Un orchestrateur d'analyse comparative** (`AnalysisScripts/run_all_3way.py`) qui permet de mesurer et quantifier la complexité syntaxique entre différents genres textuels.
 
 ---
 
