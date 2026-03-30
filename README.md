@@ -1,10 +1,12 @@
-# Analyses et comparaisons syntaxiques
+# Comparaisons syntaxiques entre corpus
 
-## Propriétés syntaxiques analysées
+### Propriétés syntaxiques extraites :
 
 - mesure de la longueur moyenne d’une dépendance au sein d’une phrase,
 - mesure du nombre moyen de dépendances par phrase.
 - fréquences des subordonnées relatives (qui, que, dont, prép+lequel), complétives, hypothétiques, gérondif, incises, et propositions coordonnées. Inspiré de [ce script](https://gitlab.huma-num.fr/texttokids/ttkwp3-2025/-/blob/main/text_complexity/server/src/processor/syntaxe/structures_syntaxiques.py)
+
+La variable dépendante utilisée est la Distance de Dépendance Moyenne calculée au niveau des phrases (explication dans la section "détails" ci-dessous).
 
 ## Corpus
 
@@ -147,3 +149,40 @@ python AnalysisScripts/run_all_3way.py --sequential
 ```
 
 Tous les résultats, tableaux comparatifs complets et rapports d'analyses se trouveront dans le répertoire `results/`.
+
+### Détails
+
+#### Explication intuitive de la distance de dépendance moyenne
+
+Dans un arbre de dépendances, certains mots sont reliés à leur gouverneur.
+
+Soit $\sigma_m$ la position du mot $m$ dans la phrase, et $\mathrm{gov}(m)$ son gouverneur.
+La distance de dépendance entre $m$ et son gouverneur est définie par :
+
+$$
+\Delta(m) = |\sigma_m - \sigma_{\mathrm{gov}(m)}|.
+$$
+
+Par exemple, si $m$ est le 2\textsuperscript{ème} mot et que son gouverneur est le 5\textsuperscript{ème}, alors :
+
+$$
+\Delta(m) = |5 - 2| = 3.
+$$
+
+Pour une phrase donnée, on considère l’ensemble des mots ayant un gouverneur :
+
+$$
+P = \{ m \mid m \text{ a un gouverneur} \}.
+$$
+
+La distance de dépendance moyenne est alors définie par :
+
+$$
+\mathrm{MDD} = \frac{1}{|P|} \sum_{m \in P} \Delta(m).
+$$
+
+Formellement :
+
+$$
+\text{Distance de Dépendance Moyenne} = \frac{1}{|P|} \sum_{m \in P} \Delta(m).
+$$
